@@ -5,20 +5,20 @@ import { GraduationCap, School } from "lucide-react";
 import BlurFade from "@/components/ui/blur-fade";
 import { HoverEffect } from "@/components/ui/card-hover-effect";
 
-{/* TODO : student page.tsx, and prof page.tsx*/}
+{/* TODO : student page.tsx, and prof page.tsx*/ }
 
 export default function SelectRole() {
   const roles = [
     {
       title: "Student",
       description: "Access your courses, schedules, and ratings.",
-      link: "/student",
+      link: "./selectsemester/studentpage",
       icon: GraduationCap,
     },
     {
       title: "Professor",
       description: "Manage your courses and student interactions.",
-      link: "/professor",
+      link: "./selectsemester/professorpage",
       icon: School,
     },
   ];
@@ -38,7 +38,7 @@ export default function SelectRole() {
           </h1>
 
           <div className="w-full max-w-5xl px-4">
-            <HoverEffect 
+            <HoverEffect
               items={items}
               className="gap-8"
             />
