@@ -2,6 +2,8 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
+import { GraduationCap, School } from "lucide-react";
+import React from "react";
 
 export const HoverEffect = ({
   items,
@@ -16,10 +18,15 @@ export const HoverEffect = ({
 }) => {
   let [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
+  const icons = {
+    Student: GraduationCap,
+    Professor: School,
+  };
+
   return (
     <div
       className={cn(
-        "grid grid-cols-1 md:grid-cols-2  lg:grid-cols-2  py-10",
+        "grid grid-cols-1 md:grid-cols-2 gap-4",
         className
       )}
     >
@@ -27,14 +34,14 @@ export const HoverEffect = ({
         <Link
           href={item?.link}
           key={item?.link}
-          className="relative group  block p-2 h-full w-full"
+          className="relative group block p-2 h-full w-full"
           onMouseEnter={() => setHoveredIndex(idx)}
           onMouseLeave={() => setHoveredIndex(null)}
         >
           <AnimatePresence>
             {hoveredIndex === idx && (
               <motion.span
-                className="absolute inset-0 h-full w-full bg-neutral-200 dark:bg-slate-800/[0.8] block  rounded-3xl"
+                className="absolute inset-0 h-full w-full bg-slate-800/[0.8] block rounded-3xl"
                 layoutId="hoverBackground"
                 initial={{ opacity: 0 }}
                 animate={{
@@ -48,9 +55,27 @@ export const HoverEffect = ({
               />
             )}
           </AnimatePresence>
+
           <Card>
-            <CardTitle>{item.title}</CardTitle>
-            <CardDescription>{item.description}</CardDescription>
+            <div className="flex flex-col items-center justify-center text-center">
+              {icons[item.title as keyof typeof icons] && (
+                <div className={`mb-4 ${
+                  item.title === "Student" ? "text-blue-400" : "text-violet-400"
+                }`}>
+                  {React.createElement(icons[item.title as keyof typeof icons], { size: 64 })}
+                </div>
+              )}
+
+              <CardTitle className={`text-3xl ${
+                item.title === "Student" ? "text-blue-400" : "text-violet-400"
+              }`}>
+                {item.title}
+              </CardTitle>
+
+              <CardDescription className="text-lg">
+                {item.description}
+              </CardDescription>
+            </div>
           </Card>
         </Link>
       ))}
@@ -68,16 +93,17 @@ export const Card = ({
   return (
     <div
       className={cn(
-        "rounded-2xl h-full w-full p-4 overflow-hidden bg-black border border-transparent dark:border-white/[0.2] group-hover:border-slate-700 relative z-20",
+        "rounded-2xl h-full w-full p-8 overflow-hidden bg-black border border-white/[0.2] group-hover:border-slate-700 relative z-20 transition-all duration-300",
         className
       )}
     >
       <div className="relative z-50">
-        <div className="p-4">{children}</div>
+        {children}
       </div>
     </div>
   );
 };
+
 export const CardTitle = ({
   className,
   children,
@@ -86,11 +112,12 @@ export const CardTitle = ({
   children: React.ReactNode;
 }) => {
   return (
-    <h4 className={cn("text-zinc-100 font-bold tracking-wide mt-4", className)}>
+    <h4 className={cn("font-bold tracking-wide mt-4", className)}>
       {children}
     </h4>
   );
 };
+
 export const CardDescription = ({
   className,
   children,
@@ -101,7 +128,7 @@ export const CardDescription = ({
   return (
     <p
       className={cn(
-        "mt-8 text-zinc-400 tracking-wide leading-relaxed text-sm",
+        "mt-4 text-zinc-400 tracking-wide leading-relaxed",
         className
       )}
     >
