@@ -12,13 +12,13 @@ export default function SelectRole() {
     {
       title: "Student",
       description: "Access your courses, schedules, and ratings.",
-      link: "./selectsemester/studentpage",
+      link: "/selectsemester/student",
       icon: GraduationCap,
     },
     {
       title: "Professor",
       description: "Manage your courses and student interactions.",
-      link: "./selectsemester/professorpage",
+      link: "/selectsemester/professor",
       icon: School,
     },
   ];
