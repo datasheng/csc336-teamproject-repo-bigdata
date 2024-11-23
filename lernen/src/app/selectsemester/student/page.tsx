@@ -2,6 +2,7 @@ import DropdownList from "@/components/ui/dropdown";
 
 interface ListItem {
     title: string;
+    enrollment: string;
     content: string;
 }
 
@@ -12,20 +13,20 @@ export default function studentPage() {
        Maybe on their page show a short list of their classes and have a clickable button for full view
     */
     const listData: ListItem[] = [
-        { title: "Spring 2025", content: "Enrollment Date: ..." },
-        { title: "Winter 2024", content: "Enrollment Date: ..." },
-        { title: "Fall 2024", content: "Enrollment Date: ..." },
-        { title: "Summer 2024", content: "Enrollment Date: ..." },
-        { title: "Spring 2024", content: "Enrollment Date: ..." },
-        { title: "Winter 2023", content: "Enrollment Date: ..." },
-        { title: "Fall 2023", content: "Enrollment Date: ..." },
-        { title: "Summer 2023", content: "Enrollment Date: ..." },
+        { title: "Spring 2025", enrollment: 'These Nuts', content: "Enrollment Date: ... <br>Test" },
+        { title: "Winter 2024", enrollment: 'Test', content: "Enrollment Date: ..." },
+        { title: "Fall 2024", enrollment: 'Test', content: "Enrollment Date: ..." },
+        { title: "Summer 2024", enrollment: 'Test', content: "Enrollment Date: ..." },
+        { title: "Spring 2024", enrollment: 'Test', content: "Enrollment Date: ..." },
+        { title: "Winter 2023", enrollment: 'Test', content: "Enrollment Date: ..." },
+        { title: "Fall 2023", enrollment: 'Test', content: "Enrollment Date: ..." },
+        { title: "Summer 2023", enrollment: 'Test', content: "Enrollment Date: ..." },
     ];
 
     return (
         <div className="min-h-screen bg-gradient-to-r from-black via-gray-900 to-gray-800 text-white">
             <header className="text-center py-10">
-                <h1 className="text-4xl font-bold">Next.js Dropdown List Component</h1>
+                <h1 className="text-4xl font-bold">Student's List</h1>
             </header>
             <main className="max-w-2xl mx-auto py-10">
                 <DropdownList listData={listData} />

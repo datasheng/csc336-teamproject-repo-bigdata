@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 
 interface DropdownItemProps {
     title: string;
+    enrollment: string;
     content: string;
 }
 
