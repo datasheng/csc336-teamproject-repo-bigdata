@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import DropdownItem from './dropdownitems';
+import { CourseDetails } from './types';
 
 interface SemesterItem {
     title: string;
     enrollment: string;
     content: string;
+    courses?: CourseDetails[];
 }
 
 interface SemesterGroupProps {
@@ -17,7 +19,7 @@ interface SemesterGroupProps {
 }
 
 const SemesterGroup: React.FC<SemesterGroupProps> = ({ title, items }) => {
-    const [isExpanded, setIsExpanded] = useState(title === 'Current'); // Auto-expand current semester
+    const [isExpanded, setIsExpanded] = useState(title === 'Current Semester');
 
     return (
         <div className="mb-6">
@@ -49,6 +51,7 @@ const SemesterGroup: React.FC<SemesterGroupProps> = ({ title, items }) => {
                                 title={item.title}
                                 enrollment={item.enrollment}
                                 content={item.content}
+                                courses={item.courses}
                             />
                         ))}
                     </motion.div>

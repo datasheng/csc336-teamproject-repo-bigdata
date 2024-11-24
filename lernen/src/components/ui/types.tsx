@@ -24,3 +24,9 @@ export interface ListItem {
     content: string;
     courses?: CourseDetails[];
 }
+
+export interface GroupedSemesters {
+    future: ListItem[];
+    current: ListItem[];
+    past: ListItem[];
+}
