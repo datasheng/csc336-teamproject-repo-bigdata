@@ -19,7 +19,7 @@ export default function SelectRole() {
     {
       title: "Professor",
       description: "Manage your courses and student interactions.",
-      link: "/selectsemester/professor",
+      link: "/selectsemester/student", /* Change this to /selectrole/signup after we finish up the auth and ETC*/
       icon: School,
     },
   ];
