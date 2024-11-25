@@ -37,6 +37,25 @@ export const getStudentData = () => {
                             end: "Dec 20, 2024"
                         },
                         status: 'Closed'
+                    },
+                    {
+                        courseCode: "CSC 10400",
+                        courseName: "Discrete Math",
+                        professor: "Nathaniel Kingsbury",
+                        schedule: {
+                            days: "Mon/Wed",
+                            time: "10:00 AM - 11:40 AM",
+                            room: "NAC 7/107"
+                        },
+                        seats: {
+                            total: 25,
+                            enrolled: 25
+                        },
+                        dates: {
+                            start: "Aug 25, 2024",
+                            end: "Dec 20, 2024"
+                        },
+                        status: 'Closed'
                     }
                 ]
             }

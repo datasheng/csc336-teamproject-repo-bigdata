@@ -1,7 +1,7 @@
 import React from "react";
 import { Spotlight } from "@/components/ui/spotlight";
-import BlurFade  from "@/components/ui/blur-fade";
-import { GraduationCap, BookPlus } from "lucide-react";
+import BlurFade from "@/components/ui/blur-fade";
+import { GraduationCap, BookPlus, LogIn } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
@@ -19,7 +19,7 @@ export default function Home() {
           {/* <div className="opacity-0 animate-[fadeIn_2s_ease_0.75s_forwards]"> */}
           <BlurFade delay={0.15} inView>
             <div className="mb-6 flex items-center justify-center space-x-2">
-              <BookPlus className="h-12 w-12 text-blue-400"/>
+              <BookPlus className="h-12 w-12 text-blue-400" />
               <h2 className="text-6xl font-bold text-blue-400">Lernen</h2>
             </div>
 
@@ -32,18 +32,25 @@ export default function Home() {
               easier. Join others in achieving and fulfilling their educational goals.
             </p>
 
-            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              {/* TODO: redirect to auth when that's connected, but for now redirection to role select is fine. */}
+            <div className="mt-8 flex flex items-center justify-center gap-4 sm:flex-row">
+              {/* TODO: redirect to auth when that's connected, but for now redirection to role select is fine.*/}
               <Link href="/selectrole">
                 <button className="group relative flex w-48 items-center justify-center overflow-hidden rounded-full bg-blue-500 px-6 py-3 text-sm font-medium text-white transition-all duration-300 ease-out hover:bg-blue-400 hover:scale-105">
                   Get Started
                   <GraduationCap className="ml-2 h-4 w-4" />
                 </button>
               </Link>
+
+              <Link href="/login">
+                <button className="group relative flex w-36 items-center justify-center overflow-hidden rounded-full border-2 border-blue-500 bg-transparent px-4 py-3 text-sm font-medium text-blue-500 transition-all duration-300 ease-out hover:bg-blue-500 hover:text-white hover:scale-105">
+                  Login
+                  <LogIn className='ml-2 h-4 w-4' />
+                </button>
+              </Link>
             </div>
           </BlurFade>
         </div>
-        
+
       </div>
       {/* <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px]" /> */}
     </main>
