@@ -1,29 +1,30 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
 import BlurFade from "@/components/ui/blur-fade";
-import { LogIn, Mail, Lock } from "lucide-react";
+import { UserPlus, Mail, Lock, User } from "lucide-react";
 import Link from "next/link";
 
-{/* TODO: Add a Forgot Password Page*/ }
-export default function LoginPage() {
+export default function SignUpPage() {
     const [formData, setFormData] = useState({
-        email: "",
-        password: "",
+        fullName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle login logic here
-        console.log(formData);
+        // Do Backend Here
+        console.log(formData)
     };
 
     return (
         <main className="flex min-h-screen flex-col bg-black text-white">
             <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-black/[0.96] antialiased bg-grid-white/[0.02]">
                 <Spotlight
-                    className="-top-40 left-0 md:left-60 md:-top-20"
+                    className="-top-40 right-0 md:right-60 md:-top-20"
                     fill="#60A5FA"
                 />
 
@@ -33,16 +34,34 @@ export default function LoginPage() {
                             {/* Header */}
                             <div className="space-y-2 text-center">
                                 <h1 className="text-3xl font-bold bg-gradient-to-b from-blue-50 to-blue-400 bg-clip-text text-transparent">
-                                    Welcome Back!
+                                    Create Account
                                 </h1>
                                 <p className="text-sm text-gray-400">
-                                    Please login to your account
+                                    Join Lernen to start managing your courses
                                 </p>
                             </div>
 
+
                             {/* Form */}
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                {/* Email Input */}
+                                {/* Full Name Input*/}
+                                <div className="space-y-2">
+                                    <label className="text-sm font_medium text-gray-200"> Full Name </label>
+                                    <div className='relative'>
+                                        <input
+                                            type='text'
+                                            placeholder='John Doe'
+                                            className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg pl-10 focus:outline-none focus:border-blue-500 transition-colors"
+                                            value={formData.fullName}
+                                            onChange={(e) =>
+                                                setFormData({ ...formData, fullName: e.target.value })
+                                            }
+                                        />
+                                        <User className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                                    </div>
+                                </div>
+
+                                {/* Email Input*/}
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-200">
                                         Email Address
@@ -69,7 +88,7 @@ export default function LoginPage() {
                                     <div className="relative">
                                         <input
                                             type="password"
-                                            placeholder="••••••••"
+                                            placeholder="•••••••••••••••"
                                             className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg pl-10 focus:outline-none focus:border-blue-500 transition-colors"
                                             value={formData.password}
                                             onChange={(e) =>
@@ -80,33 +99,42 @@ export default function LoginPage() {
                                     </div>
                                 </div>
 
-                                {/* Forgot Password Link */}
-                                <div className="flex justify-end">
-                                    <Link
-                                        href="/forgot-password"
-                                        className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                                    >
-                                        Forgot Password?
-                                    </Link>
+                                {/* Confirm Password Input */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-200">
+                                        Confirm Password
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="password"
+                                            placeholder="•••••••••••••••"
+                                            className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg pl-10 focus:outline-none focus:border-blue-500 transition-colors"
+                                            value={formData.confirmPassword}
+                                            onChange={(e) =>
+                                                setFormData({ ...formData, confirmPassword: e.target.value })
+                                            }
+                                        />
+                                        <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                                    </div>
                                 </div>
 
-                                {/* Login Button */}
+                                {/* Sign Up Button */}
                                 <button
                                     type="submit"
                                     className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center justify-center space-x-2 hover:bg-blue-400 transition-colors"
                                 >
-                                    <span>Login</span>
-                                    <LogIn className="h-4 w-4" />
+                                    <span>Sign Up</span>
+                                    <UserPlus className="h-4 w-4" />
                                 </button>
 
-                                {/* Sign Up Link */}
+                                {/* Login Link */}
                                 <p className="text-center text-sm text-gray-400">
-                                    New User?{" "}
+                                    Already have an account?{" "}
                                     <Link
-                                        href="/selectrole/signup"
+                                        href="/login"
                                         className="text-blue-400 hover:text-blue-300 transition-colors"
                                     >
-                                        Sign up
+                                        Login
                                     </Link>
                                 </p>
                             </form>

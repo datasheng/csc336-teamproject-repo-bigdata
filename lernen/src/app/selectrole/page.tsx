@@ -6,13 +6,14 @@ import BlurFade from "@/components/ui/blur-fade";
 import { HoverEffect } from "@/components/ui/card-hover-effect";
 
 {/* TODO : student page.tsx, and prof page.tsx*/ }
+{/* Redirect back to Student Dashboard, going to have a signup*/ }
 
 export default function SelectRole() {
   const roles = [
     {
       title: "Student",
       description: "Access your courses, schedules, and ratings.",
-      link: "/selectsemester/student",
+      link: "/selectrole/signup",
       icon: GraduationCap,
     },
     {
