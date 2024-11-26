@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
 import BlurFade from "@/components/ui/blur-fade";
-import { LogIn, Mail, Lock } from "lucide-react";
+import { LogIn, Mail, Lock, BookPlus } from "lucide-react";
 import Link from "next/link";
 
 {/* TODO: Add a Forgot Password Page*/ }
@@ -22,6 +22,16 @@ export default function LoginPage() {
     return (
         <main className="flex min-h-screen flex-col bg-black text-white">
             <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-black/[0.96] antialiased bg-grid-white/[0.02]">
+                {/* Added Lernen Home Redirecton */}
+                <div className="absolute top-4 left-4 z-20">
+                    <Link href="/">
+                        <div className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+                            <BookPlus className="h-8 w-8 text-blue-400" />
+                            <span className="text-2xl font-bold text-blue-400">Lernen</span>
+                        </div>
+                    </Link>
+                </div>
+                
                 <Spotlight
                     className="-top-40 left-0 md:left-60 md:-top-20"
                     fill="#60A5FA"
