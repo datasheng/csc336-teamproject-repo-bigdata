@@ -21,8 +21,8 @@ export default function SelectRole() {
       // Can also change to /selectsemester/student to see the current dashboard in the making
       title: "Professor",
       description: "Manage your courses and student interactions.",
-      link: "/professoradmin", 
-      icon: School, 
+      link: "/professor",
+      icon: School,
     },
   ];
 
@@ -37,14 +37,14 @@ export default function SelectRole() {
       <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-black/[0.96] antialiased bg-grid-white/[0.02]">
         {/* Added Lernen Home Redirecton */}
         <div className="absolute top-4 left-4 z-20">
-                    <Link href="/">
-                        <div className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-                            <BookPlus className="h-8 w-8 text-blue-400" />
-                            <span className="text-2xl font-bold text-blue-400">Lernen</span>
-                        </div>
-                    </Link>
-                </div>
-        
+          <Link href="/">
+            <div className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              <BookPlus className="h-8 w-8 text-blue-400" />
+              <span className="text-2xl font-bold text-blue-400">Lernen</span>
+            </div>
+          </Link>
+        </div>
+
         <BlurFade delay={0.15} inView>
           <h1 className="bg-gradient-to-b from-blue-50 to-blue-400 bg-clip-text py-4 text-center text-4xl font-bold text-transparent md:text-6xl mb-12">
             Select your role
