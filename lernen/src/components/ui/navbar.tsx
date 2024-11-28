@@ -37,18 +37,12 @@ const Navbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                 {
                     label: 'Dashboard',
                     icon: LayoutDashboard,
-                    href: '/professor/dashboard'
+                    href: '/professor'
                 },
                 {
                     label: 'Calendar',
                     icon: CalendarDays,
                     href: '/professor/calendar'
-                },
-                {
-                    label: 'Announcements',
-                    icon: BellRing,
-                    href: 'professor/announcement',
-                    notifications: 2
                 }
             ]
         },
@@ -126,21 +120,10 @@ const Navbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                                             {!isCollapsed && <span>{item.label}</span>}
                                         </div>
 
-                                        {!isCollapsed && item.notifications && (
-                                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                                                {item.notifications}
-                                            </span>
-                                        )}
-
                                         {/* Tooltip for collapsed state */}
                                         {isCollapsed && (
                                             <div className="absolute left-full ml-2 hidden rounded-md bg-gray-800 px-2 py-1 text-xs text-white group-hover:block z-50">
                                                 {item.label}
-                                                {item.notifications && (
-                                                    <span className="ml-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs">
-                                                        {item.notifications}
-                                                    </span>
-                                                )}
                                             </div>
                                         )}
                                     </Link>

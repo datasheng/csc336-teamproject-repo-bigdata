@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
 import BlurFade from "@/components/ui/blur-fade";
-import { UserPlus, Mail, Lock, User, Home, BookPlus} from "lucide-react";
+import { UserPlus, Mail, Lock, User, Home, BookPlus } from "lucide-react";
 import Link from "next/link";
 
-{/* Add a Home Button to redirect you to homepage */}
+{/* Add a Home Button to redirect you to homepage */ }
 export default function SignUpPage() {
     const [formData, setFormData] = useState({
         fullName: '',
@@ -33,7 +33,7 @@ export default function SignUpPage() {
                         </div>
                     </Link>
                 </div>
-                
+
                 <Spotlight
                     className="-top-40 right-0 md:right-60 md:-top-20"
                     fill="#60A5FA"
@@ -142,7 +142,7 @@ export default function SignUpPage() {
                                 <p className="text-center text-sm text-gray-400">
                                     Already have an account?{" "}
                                     <Link
-                                        href="/login"
+                                        href="/selectrole/login"
                                         className="text-blue-400 hover:text-blue-300 transition-colors"
                                     >
                                         Login

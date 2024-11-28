@@ -41,7 +41,7 @@ export default function Home() {
                 </button>
               </Link>
 
-              <Link href="/login">
+              <Link href="/selectrole/login">
                 <button className="group relative flex w-36 items-center justify-center overflow-hidden rounded-full border-2 border-blue-500 bg-transparent px-4 py-3 text-sm font-medium text-blue-500 transition-all duration-300 ease-out hover:bg-blue-500 hover:text-white hover:scale-105">
                   Login
                   <LogIn className='ml-2 h-4 w-4' />

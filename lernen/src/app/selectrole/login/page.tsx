@@ -31,7 +31,7 @@ export default function LoginPage() {
                         </div>
                     </Link>
                 </div>
-                
+
                 <Spotlight
                     className="-top-40 left-0 md:left-60 md:-top-20"
                     fill="#60A5FA"
@@ -93,7 +93,7 @@ export default function LoginPage() {
                                 {/* Forgot Password Link */}
                                 <div className="flex justify-end">
                                     <Link
-                                        href="/forgotpassword"
+                                        href="/selectrole/forgotpassword"
                                         className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
                                     >
                                         Forgot Password?
