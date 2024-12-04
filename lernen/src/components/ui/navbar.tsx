@@ -57,7 +57,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                 {
                     label: 'Students',
                     icon: Users,
-                    href: '/professor/Students'
+                    href: '/professor/students'
                 }
             ]
         },

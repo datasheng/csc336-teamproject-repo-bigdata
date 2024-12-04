@@ -44,7 +44,7 @@ export default function ProfessorDashboard() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-black">
+    <div className="flex h-screen bg-black overflow-hidden">
       <Navbar onCollapse={setIsNavCollapsed} />
 
       <main className={`flex-1 transition-all duration-300 ${isNavCollapsed ? 'ml-16' : 'ml-64'}`}>
