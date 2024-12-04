@@ -38,8 +38,8 @@ const dummyCourses = [
     }
 ];
 
-const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-const timeSlots = Array.from({ length: 12 }, (_, i) => `${i + 8}:00`); // 8 AM to 8 PM
+const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const timeSlots = Array.from({ length: 15 }, (_, i) => `${i + 8}:00`); // 7 AM to 9 PM
 
 export default function CalendarPage() {
     const [isNavCollapsed, setIsNavCollapsed] = useState(false);
