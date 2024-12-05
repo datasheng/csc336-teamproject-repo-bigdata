@@ -6,7 +6,7 @@ import BlurFade from "@/components/ui/blur-fade";
 import { HoverEffect } from "@/components/ui/card-hover-effect";
 import Link from "next/link";
 
-{/* TODO : student page.tsx, and prof page.tsx 
+{/* TODO : student page.tsx
            Redirect back to Student Dashboard, going to have a signup */}
 
 export default function SelectRole() {
