@@ -26,7 +26,7 @@ export default function SignUpPage() {
         console.log(formData)
     }
 
-    const handleOAuthSignIn = async (provider: 'google' | 'github' | 'discord' | 'linkedin') => {
+    const handleOAuthSignIn = async (provider: 'google' | 'github') => {
         try {
             setIsLoading(true);
             const { data, error } = await supabase.auth.signInWithOAuth({
@@ -43,7 +43,6 @@ export default function SignUpPage() {
             setIsLoading(false);
         }
     };
-    ;
 
     return (
         <main className="flex min-h-screen flex-col bg-black text-white">
