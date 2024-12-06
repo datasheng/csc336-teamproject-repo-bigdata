@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
                         </div>
                     </Link>
                 </div>
-                
+
                 <Spotlight
                     className="-top-40 left-0 md:left-60 md:-top-20"
                     fill="#60A5FA"
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
 
                                 {/* Back to Login Link */}
                                 <Link
-                                    href="/login"
+                                    href="/selectrole/login"
                                     className="flex items-center justify-center space-x-2 text-sm text-gray-400 hover:text-gray-300 transition-colors"
                                 >
                                     <ArrowLeft className="h-4 w-4" />
