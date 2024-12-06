@@ -5,6 +5,9 @@ import { Spotlight } from "@/components/ui/spotlight";
 import BlurFade from "@/components/ui/blur-fade";
 import { LogIn, Mail, Lock, BookPlus } from "lucide-react";
 import Link from "next/link";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Button } from "@/components/ui/button";
+import { GithubIcon, Discord, Linkedin } from 'lucide-react';
 
 {/* TODO: Add a Forgot Password Page*/ }
 export default function LoginPage() {
