@@ -14,14 +14,14 @@ export default function SelectRole() {
     {
       title: "Student",
       description: "Access your courses, schedules, and ratings.",
-      link: "/selectrole/signup",
+      link: "/student/",
       icon: GraduationCap,
     },
     { // Change this to /selectrole/signup after we finish up the auth and ETC
       // Can also change to /selectsemester/student to see the current dashboard in the making
       title: "Professor",
       description: "Manage your courses and student interactions.",
-      link: "/professor",
+      link: "/selectrole/signup", // do /professor to read professor dashboard
       icon: School,
     },
   ];
