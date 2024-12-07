@@ -8,8 +8,6 @@ import {
     LayoutDashboard,
     CalendarDays,
     Users,
-    ClipboardList,
-    BellRing,
     ChevronLeft,
     ChevronRight,
     ScrollText
@@ -19,7 +17,7 @@ interface NavbarProps {
     onCollapse?: (collapsed: boolean) => void;
 }
 
-const studentnavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
+const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const pathname = usePathname();
 
@@ -56,14 +54,9 @@ const studentnavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
             section: 'View',
             items: [
                 {
-                    label: 'Courses',
-                    icon: ClipboardList,
-                    href: '/student/courses'
-                },
-                {
                     label: 'Students',
                     icon: Users,
-                    href: 'student/students'
+                    href: '/student/list'
                 }
             ]
         },
@@ -165,4 +158,4 @@ const studentnavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
     );
 };
 
-export default studentnavbar;
+export default StudentNavbar;

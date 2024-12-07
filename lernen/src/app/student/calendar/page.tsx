@@ -12,7 +12,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import Navbar from '@/components/ui/navbar';
+import StudentNavbar from '@/components/ui/studentnavbar';
 
 // Helper function to format time in 12-hour format
 const formatTime = (time: string) => {
@@ -151,7 +151,7 @@ export default function CalendarPage() {
 
     return (
         <div className="flex h-screen bg-black overflow-hidden">
-            <Navbar onCollapse={setIsNavCollapsed} />
+            <StudentNavbar onCollapse={setIsNavCollapsed} />
 
             <main className={`flex-1 transition-all duration-300 ${isNavCollapsed ? 'ml-16' : 'ml-64'}`}>
                 <div className="relative min-h-screen bg-black/[0.96] text-white p-8">
