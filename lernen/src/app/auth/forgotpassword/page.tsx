@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
 
                                 {/* Back to Login Link */}
                                 <Link
-                                    href="/selectrole/login"
+                                    href="/auth/login"
                                     className="flex items-center justify-center space-x-2 text-sm text-gray-400 hover:text-gray-300 transition-colors"
                                 >
                                     <ArrowLeft className="h-4 w-4" />

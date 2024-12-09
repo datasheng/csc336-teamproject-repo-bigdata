@@ -6,16 +6,17 @@ import BlurFade from "@/components/ui/blur-fade";
 import { LogIn, Mail, Lock, BookPlus } from "lucide-react";
 import Link from "next/link";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Button } from "@/components/ui/button";
-import { Github, Linkedin } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
 
 export default function LoginPage() {
     const [formData, setFormData] = useState({
         email: "",
         password: "",
     });
-
+    const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
     const supabase = createClientComponentClient();
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -24,9 +25,37 @@ export default function LoginPage() {
         console.log(formData);
     }
 
+    const handleEmailSignIn = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setIsLoading(true);
+
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: formData.email,
+                password: formData.password,
+            });
+
+            if (error) {
+                throw error;
+            }
+
+            // Successful login - redirect to dashboard
+            router.push('/dashboard');
+            router.refresh();
+
+        } catch (error: any) {
+            setError(error.message || 'Failed to sign in');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleOAuthSignIn = async (provider: 'google' | 'github') => {
         try {
             setIsLoading(true);
+            setError(null);
+
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: provider,
                 options: {
@@ -34,14 +63,12 @@ export default function LoginPage() {
                 }
             });
             if (error) throw error;
-        } catch (error) {
-            console.error('OAuth error:', error);
+        } catch (error: any) {
+            setError(error.message || `Failed to sign in with ${provider}`);
         } finally {
             setIsLoading(false);
         }
     };
-    ;
-
 
 
     return (
@@ -74,6 +101,13 @@ export default function LoginPage() {
                                     Please login to your account
                                 </p>
                             </div>
+
+                            {error && (
+                                <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                    {error}
+                                </div>
+                            )}
+
 
                             {/* Form */}
                             <form onSubmit={handleSubmit} className="space-y-4">
@@ -118,7 +152,7 @@ export default function LoginPage() {
                                 {/* Forgot Password Link */}
                                 <div className="flex justify-end">
                                     <Link
-                                        href="/selectrole/forgotpassword"
+                                        href="/auth/forgotpassword"
                                         className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
                                     >
                                         Forgot Password?
@@ -179,7 +213,7 @@ export default function LoginPage() {
                                 <p className="text-center text-sm text-gray-400">
                                     New User?{" "}
                                     <Link
-                                        href="/selectrole/signup"
+                                        href="/auth/signup"
                                         className="text-blue-400 hover:text-blue-300 transition-colors"
                                     >
                                         Sign up

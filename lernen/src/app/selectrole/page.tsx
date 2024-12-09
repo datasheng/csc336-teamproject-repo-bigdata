@@ -21,7 +21,7 @@ export default function SelectRole() {
       // Can also change to /selectsemester/student to see the current dashboard in the making
       title: "Professor",
       description: "Manage your courses and student interactions.",
-      link: "/selectrole/signup", // do /professor to read professor dashboard
+      link: "/auth/signup", // do /professor to read professor dashboard
       icon: School,
     },
   ];

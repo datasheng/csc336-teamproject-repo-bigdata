@@ -8,11 +8,15 @@ import Link from "next/link";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Button } from "@/components/ui/button";
 import { Github, Linkedin } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
 
 {/* Add a Home Button to redirect you to homepage */ }
 export default function SignUpPage() {
+    const router = useRouter();
     const supabase = createClientComponentClient();
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -20,11 +24,54 @@ export default function SignUpPage() {
         confirmPassword: '',
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const validateForm = () => {
+        if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
+            setError('All fields are required');
+            return false;
+        }
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            return false;
+        }
+        if (formData.password.length < 6) {
+            setError('Password must be at least 6 characters long');
+            return false;
+        }
+        return true;
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Do Backend Here
-        console.log(formData)
-    }
+        setError(null);
+
+        if (!validateForm()) return;
+
+        try {
+            setIsLoading(true);
+
+            const { data, error: signUpError } = await supabase.auth.signUp({
+                email: formData.email,
+                password: formData.password,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/auth/callback`,
+                    data: {
+                        full_name: formData.fullName,
+                    }
+                }
+            });
+
+            if (signUpError) throw signUpError;
+
+            // Show success message and redirect
+            router.push('/auth/login?message=Check your email to confirm your account');
+
+        } catch (error) {
+            console.error('Error during sign up:', error);
+            setError(error instanceof Error ? error.message : 'An error occurred during sign up');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleOAuthSignIn = async (provider: 'google' | 'github') => {
         try {
@@ -75,6 +122,12 @@ export default function SignUpPage() {
                                 </p>
                             </div>
 
+                            {error && (
+                                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                                    {error}
+                                </div>
+                            )}
+
                             {/* Form */}
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 {/* Full Name Input*/}
@@ -96,13 +149,12 @@ export default function SignUpPage() {
 
                                 {/* Email Input*/}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-200">
-                                        Email Address
-                                    </label>
+                                    <label className="text-sm font-medium text-gray-200"> Email Address</label>
                                     <div className="relative">
                                         <input
                                             type="email"
                                             placeholder="username@example.com"
+                                            disabled={isLoading}
                                             className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg pl-10 focus:outline-none focus:border-blue-500 transition-colors"
                                             value={formData.email}
                                             onChange={(e) =>
@@ -115,13 +167,12 @@ export default function SignUpPage() {
 
                                 {/* Password Input */}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-200">
-                                        Password
-                                    </label>
+                                    <label className="text-sm font-medium text-gray-200">Password</label>
                                     <div className="relative">
                                         <input
                                             type="password"
                                             placeholder="•••••••••••••••"
+                                            disabled={isLoading}
                                             className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg pl-10 focus:outline-none focus:border-blue-500 transition-colors"
                                             value={formData.password}
                                             onChange={(e) =>
@@ -141,6 +192,7 @@ export default function SignUpPage() {
                                         <input
                                             type="password"
                                             placeholder="•••••••••••••••"
+                                            disabled={isLoading}
                                             className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg pl-10 focus:outline-none focus:border-blue-500 transition-colors"
                                             value={formData.confirmPassword}
                                             onChange={(e) =>
@@ -154,23 +206,39 @@ export default function SignUpPage() {
                                 {/* Sign Up Button */}
                                 <button
                                     type="submit"
+                                    disabled={isLoading}
                                     className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center justify-center space-x-2 hover:bg-blue-400 transition-colors"
                                 >
-                                    <span>Sign Up</span>
-                                    <UserPlus className="h-4 w-4" />
+                                    {isLoading ? (
+                                        <span>Creating account...</span>
+                                    ) : (
+                                        <>
+                                            <span>Sign Up</span>
+                                            <UserPlus className="h-4 w-4" />
+                                        </>
+                                    )}
                                 </button>
 
                                 {/* Login Link */}
                                 <p className="text-center text-sm text-gray-400">
                                     Already have an account?{" "}
                                     <Link
-                                        href="/selectrole/login"
+                                        href="/auth/login"
                                         className="text-blue-400 hover:text-blue-300 transition-colors"
                                     >
                                         Login
                                     </Link>
                                 </p>
                             </form>
+
+                            <div className="relative flex items-center justify-center">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-gray-800"></div>
+                                </div>
+                                <div className="relative px-4 bg-black text-sm text-gray-400">
+                                    Or continue with
+                                </div>
+                            </div>
 
                             {/* OAuth Buttons */}
                             <div className="space-y-3">
@@ -215,7 +283,7 @@ export default function SignUpPage() {
                         </div>
                     </BlurFade>
                 </div>
-            </div>
-        </main>
+            </div >
+        </main >
     );
 }
