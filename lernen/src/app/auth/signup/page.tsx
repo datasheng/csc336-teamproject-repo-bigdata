@@ -6,8 +6,6 @@ import BlurFade from "@/components/ui/blur-fade";
 import { UserPlus, Mail, Lock, User, Home, BookPlus } from "lucide-react";
 import Link from "next/link";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Button } from "@/components/ui/button";
-import { Github, Linkedin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 
