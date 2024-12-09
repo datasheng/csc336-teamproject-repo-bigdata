@@ -9,12 +9,12 @@ import Link from "next/link";
 export default function AuthCodeError() {
     const [isRedirecting, setIsRedirecting] = useState(false);
 
-    // Auto-redirect after 5 seconds
+    // Auto-redirect after 10 seconds
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsRedirecting(true);
             window.location.href = "/auth/signup";
-        }, 5000);
+        }, 10000);
 
         return () => clearTimeout(timer);
     }, []);

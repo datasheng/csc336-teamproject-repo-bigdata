@@ -6,12 +6,26 @@ import type { NextRequest } from 'next/server';
 export async function GET(request: NextRequest) {
     const requestUrl = new URL(request.url);
     const code = requestUrl.searchParams.get('code');
+    const type = requestUrl.searchParams.get('type');
 
-    if (code) {
-        const supabase = createRouteHandlerClient({ cookies });
-        await supabase.auth.exchangeCodeForSession(code);
+    if (!code) {
+        return NextResponse.redirect(new URL('/auth/auth-code-error', request.url))
     }
 
-    // URL to redirect to after sign in process completes
-    return NextResponse.redirect(new URL('/auth/emailconfirm', request.url));
+    const supabase = createRouteHandlerClient({ cookies });
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+        return NextResponse.redirect(new URL('/auth/auth-code-error', request.url))
+    }
+
+    // Explicitly handle each type
+    switch (type) {
+        case 'recovery':
+            return NextResponse.redirect(new URL('/auth/resetpassword', request.url))
+        case 'signup':
+            return NextResponse.redirect(new URL('/auth/emailconfirm', request.url))
+        default:
+            return NextResponse.redirect(new URL('/auth/auth-code-error', request.url))
+    }
 }
