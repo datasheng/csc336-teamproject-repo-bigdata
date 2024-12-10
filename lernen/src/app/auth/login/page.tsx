@@ -19,30 +19,38 @@ export default function LoginPage() {
     const router = useRouter();
     const supabase = createClientComponentClient();
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Handle login logic here
-        console.log(formData);
-    }
-
     const handleEmailSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setIsLoading(true);
 
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+        try { // First, authenticate the user
+            const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
                 email: formData.email,
                 password: formData.password,
             });
 
-            if (error) {
-                throw error;
+            if (signInError) throw signInError;
+            if (!user) throw new Error('No user found');
+
+            // Then fetch the user's details from your user table
+            const { data: userData, error: userError } = await supabase
+                .from('user')
+                .select('userID, userType')
+                .eq('email', user.email)
+                .single();
+
+            if (userError) throw userError;
+
+            // Redirect based on userType, 0 = student, 1 = professor
+            if (userData.userType) {
+                router.push('/professor');
+            } else {
+                router.push('/student');
             }
 
-            // Successful login - redirect to dashboard
-            router.push('/dashboard');
             router.refresh();
+
 
         } catch (error: any) {
             setError(error.message || 'Failed to sign in');
@@ -110,7 +118,7 @@ export default function LoginPage() {
 
 
                             {/* Form */}
-                            <form onSubmit={handleSubmit} className="space-y-4">
+                            <form onSubmit={handleEmailSignIn} className="space-y-4">
                                 {/* Email Input */}
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-200">
@@ -125,6 +133,7 @@ export default function LoginPage() {
                                             onChange={(e) =>
                                                 setFormData({ ...formData, email: e.target.value })
                                             }
+                                            disabled={isLoading}
                                         />
                                         <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
                                     </div>
@@ -162,9 +171,10 @@ export default function LoginPage() {
                                 {/* Login Button */}
                                 <button
                                     type="submit"
+                                    disabled={isLoading}
                                     className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center justify-center space-x-2 hover:bg-blue-400 transition-colors"
                                 >
-                                    <span>Login</span>
+                                    <span>{isLoading ? 'Signing in...' : 'Login'}</span>
                                     <LogIn className="h-4 w-4" />
                                 </button>
 

@@ -10,14 +10,39 @@ export async function middleware(req: NextRequest) {
         data: { session },
     } = await supabase.auth.getSession()
 
-    // Protected routes
-    if (req.nextUrl.pathname.startsWith('/professor') && !session) {
-        return NextResponse.redirect(new URL('/login', req.url))
+    if (!session) {
+        return NextResponse.redirect(new URL('/auth/login', req.url))
+    }
+
+    // If accessing professor routes, verify userType
+    if (req.nextUrl.pathname.startsWith('/professor')) {
+        const { data: userData } = await supabase
+            .from('user')
+            .select('userType')
+            .eq('email', session.user.email)
+            .single()
+
+        if (!userData?.userType) {
+            return NextResponse.redirect(new URL('/student/dashboard', req.url))
+        }
+    }
+
+    // If accessing student routes, verify userType
+    if (req.nextUrl.pathname.startsWith('/student')) {
+        const { data: userData } = await supabase
+            .from('user')
+            .select('userType')
+            .eq('email', session.user.email)
+            .single()
+
+        if (userData?.userType) {
+            return NextResponse.redirect(new URL('/professor', req.url))
+        }
     }
 
     return res
 }
 
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+    matcher: ['/professor/:path*', '/student/:path*']
 }
