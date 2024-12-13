@@ -22,6 +22,7 @@ export default function SignUpPage() {
         confirmPassword: '',
     });
 
+
     const validateForm = () => {
         if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
             setError('All fields are required');
@@ -41,36 +42,54 @@ export default function SignUpPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        if(!validateForm()) return;
+        try{
+          setIsLoading(true);
+          const { data, error: signUpError} = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
+              data: {
+                full_name: formData.fullName,
+              },
+            },
+          });
+      
+          if (signUpError) {
+            throw signUpError;
+          }
+          const userID =data?.user?.id;
 
-        if (!validateForm()) return;
-
-        try {
-            setIsLoading(true);
-
-            const { data, error: signUpError } = await supabase.auth.signUp({
+          if (!userID) {
+            setError('Failed to retrieve user ID. Please try again.');
+            return;
+          }
+          const { data: insertData, error: insertError } = await supabase
+            .from('user')
+            .insert({
+                userID: userID,
+                userName: formData.fullName,
                 email: formData.email,
-                password: formData.password,
-                options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback`,
-                    data: {
-                        full_name: formData.fullName,
-                    }
-                }
+                password: formData.password, 
+                userType: "Professor", 
+                userPremiumStatus: false,
             });
 
-            if (signUpError) throw signUpError;
-
-            // Show success message and redirect
-            router.push('/auth/login?message=Check your email to confirm your account');
-
-        } catch (error) {
-            console.error('Error during sign up:', error);
-            setError(error instanceof Error ? error.message : 'An error occurred during sign up');
+          if (insertError) {
+            console.error('Error inserting into user table:', insertError);
+            setError('An error occurred while saving your information. Please try again.');
+            return;
+          }
+          router.push('/auth/login?message=Check your email to confirm your account');
+        } catch (error: unknown) {
+          console.error('Error during sign up:', error);
+          setError(error instanceof Error ? error.message : 'An error occurred during sign up');
         } finally {
-            setIsLoading(false);
+          setIsLoading(false);
         }
-    };
-
+      };
+      
     const handleOAuthSignIn = async (provider: 'google' | 'github') => {
         try {
             setIsLoading(true);
