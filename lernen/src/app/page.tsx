@@ -1,8 +1,11 @@
+'use client'
 import React from "react";
 import { Spotlight } from "@/components/ui/spotlight";
 import BlurFade from "@/components/ui/blur-fade";
 import { GraduationCap, BookPlus, LogIn, BookOpen, Clock, Users, Bot } from "lucide-react";
 import Link from "next/link";
+import { TeamDropdown } from '@/components/ui/TeamDropdown';
+import ShinyButton from "@/components/ui/shiny-button";
 
 export default function Home() {
   return (
@@ -10,19 +13,31 @@ export default function Home() {
       {/* Navigation */}
       <nav className="fixed top-0 z-50 w-full border-b border-gray-800 bg-black/50 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+          {/* Logo */}
           <div className="flex items-center space-x-2">
             <BookPlus className="h-8 w-8 text-blue-400" />
             <span className="text-2xl font-bold text-blue-400">Lernen</span>
           </div>
-          <div className="hidden space-x-8 md:flex">
-            <Link href="#about" className="text-gray-300 hover:text-white">About Us</Link>
-            <a href='mailto:support@lernen.com' className='text-gray-300 hover:text-white'>Contact Us</a>
-            <Link href="/auth/login" className="text-gray-300 hover:text-white">Login</Link>
+
+          {/* Center Navigation Buttons */}
+          <div className="hidden flex-1 justify-center space-x-8 md:flex">
+            <Link href="#about" className="text-gray-300 hover:text-white transition-colors">About Us</Link>
+            <a href='mailto:support@lernen.com' className='text-gray-300 hover:text-white transition-colors'>Contact Us</a>
+            <TeamDropdown />
+          </div>
+
+          {/* Right Navigation Button */}
+          <div>
+            <Link href="/selectrole">
+              <ShinyButton className="!text-white text-sm font-medium bg-blue-500 hover:bg-blue-600">
+                Get Started
+              </ShinyButton>
+            </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Main Content */}
       <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-black/[0.96] antialiased bg-grid-white/[0.02]">
         <Spotlight
           className="-top-40 right-0 md:right-60 md:-top-20"
