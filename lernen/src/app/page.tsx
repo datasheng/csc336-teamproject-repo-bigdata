@@ -21,8 +21,6 @@ export default function Home() {
 
           {/* Center Navigation Buttons */}
           <div className="hidden flex-1 justify-center space-x-8 md:flex">
-            <Link href="#about" className="text-gray-300 hover:text-white transition-colors">About Us</Link>
-            <a href='mailto:support@lernen.com' className='text-gray-300 hover:text-white transition-colors'>Contact Us</a>
             <TeamDropdown />
           </div>
 
