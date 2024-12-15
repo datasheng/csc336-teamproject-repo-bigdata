@@ -11,15 +11,21 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // email verification
-    if (token_hash && type) {
+    // email verification flow
+    if (token_hash && type === 'signup') {
+        console.log('Processing signup verification...')
         const { error } = await supabase.auth.verifyOtp({
             type,
             token_hash,
         })
-        if (!error) {
-            return NextResponse.redirect(new URL(next, request.url))
+        
+        if (error) {
+            console.error('Verification error:', error)
+            return NextResponse.redirect(new URL('/auth/auth-code-error', request.url))
         }
+
+        // works go confrim
+        return NextResponse.redirect(new URL('/auth/confirm', request.url))
     }
 
     // oauth

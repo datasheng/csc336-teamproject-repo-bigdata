@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     BookPlus,
     LayoutDashboard,
@@ -11,22 +11,42 @@ import {
     ChevronLeft,
     ChevronRight,
     ScrollText,
-    Star
+    Star,
+    LogOut
 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 interface NavbarProps {
     onCollapse?: (collapsed: boolean) => void;
 }
 
+// temp type for nav items
+// logout here is temp as well, i'll make this nicer later.
+type NavItem = {
+    label: string;
+    icon: any;
+    href?: string;
+    onClick?: () => Promise<void>;
+};
+
 const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const pathname = usePathname();
+    const router = useRouter();
+    const supabase = createClient();
 
     const handleCollapse = () => {
         const newCollapsedState = !isCollapsed;
         setIsCollapsed(newCollapsedState);
         if (onCollapse) {
             onCollapse(newCollapsedState);
+        }
+    };
+
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (!error) {
+            router.push('/');
         }
     };
 
@@ -66,6 +86,16 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                 }
             ]
         },
+        {
+            section: 'Account',
+            items: [
+                {
+                    label: 'Logout',
+                    icon: LogOut,
+                    onClick: handleLogout
+                }
+            ]
+        }
     ];
 
     return (
@@ -107,18 +137,41 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                                     {section.section}
                                 </div>
                             )}
-                            {section.items.map((item) => {
+                            {section.items.map((item: NavItem) => {
                                 const Icon = item.icon;
-                                const isActive = pathname === item.href;
+                                const isActive = item.href ? pathname === item.href : false;
+
+                                if (item.href) {
+                                    return (
+                                        <Link
+                                            key={item.label}
+                                            href={item.href}
+                                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors relative group ${
+                                                isActive
+                                                    ? 'bg-blue-500/10 text-blue-400'
+                                                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                                            }`}
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <Icon className="h-4 w-4 flex-shrink-0" />
+                                                {!isCollapsed && <span>{item.label}</span>}
+                                            </div>
+
+                                            {/* Tooltip for collapsed state */}
+                                            {isCollapsed && (
+                                                <div className="absolute left-full ml-2 hidden rounded-md bg-gray-800 px-2 py-1 text-xs text-white group-hover:block z-50">
+                                                    {item.label}
+                                                </div>
+                                            )}
+                                        </Link>
+                                    );
+                                }
 
                                 return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors relative group ${isActive
-                                            ? 'bg-blue-500/10 text-blue-400'
-                                            : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                                            }`}
+                                    <button
+                                        key={item.label}
+                                        onClick={item.onClick}
+                                        className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors relative group text-gray-400 hover:bg-gray-800/50 hover:text-white`}
                                     >
                                         <div className="flex items-center space-x-2">
                                             <Icon className="h-4 w-4 flex-shrink-0" />
@@ -131,7 +184,7 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                                                 {item.label}
                                             </div>
                                         )}
-                                    </Link>
+                                    </button>
                                 );
                             })}
                         </div>

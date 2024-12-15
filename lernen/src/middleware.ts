@@ -49,6 +49,31 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // if user is authenticated and trying to access auth pages, redirect to dashboard
+  if (
+    user && 
+    (request.nextUrl.pathname.startsWith('/auth') || 
+     request.nextUrl.pathname === '/selectrole')
+  ) {
+    const { data: userData } = await supabase
+      .from('user')
+      .select('userType')
+      .eq('email', user.email)
+      .single()
+
+    // redir based on user type
+    const url = request.nextUrl.clone()
+    if (userData?.userType === 'Professor') {
+      url.pathname = '/professor'
+    } else if (userData?.userType === 'Student') {
+      url.pathname = '/student'
+    } else {
+      // invalid user type go root
+      url.pathname = '/'
+    }
+    return NextResponse.redirect(url)
+  }
+
   return supabaseResponse
 }
 

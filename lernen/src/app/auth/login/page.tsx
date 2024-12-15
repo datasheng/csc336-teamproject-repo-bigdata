@@ -41,10 +41,10 @@ export default function LoginPage() {
 
             if (userError) throw userError;
 
-            // Redirect based on userType, 'st' = student, 'prof' = professor
-            if (userData.userType === 'prof') {
+            // usertype redirect
+            if (userData.userType === "Professor") {
                 router.push('/professor');
-            } else if (userData.userType === 'st') {
+            } else if (userData.userType === "Student") {
                 router.push('/student');
             } else {
                 throw new Error('Invalid user type');

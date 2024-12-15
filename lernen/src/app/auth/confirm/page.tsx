@@ -5,18 +5,21 @@ import { Spotlight } from "@/components/ui/spotlight";
 import BlurFade from "@/components/ui/blur-fade";
 import { Check, BookPlus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 
 export default function EmailConfirmation() {
     const [isRedirecting, setIsRedirecting] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
+        // test 3 secs ? didn't work, idk why. but no more error ig
         const timer = setTimeout(() => {
             setIsRedirecting(true);
-            window.location.href = "/auth/login";
-        }, 5000);
+            router.push('/auth/login');
+        }, 3000);
 
         return () => clearTimeout(timer);
-    }, []);
+    }, [router]);
 
     return (
         <main className="flex min-h-screen flex-col bg-black text-white">
@@ -61,7 +64,7 @@ export default function EmailConfirmation() {
                                 {isRedirecting ? (
                                     <p>Redirecting to login page...</p>
                                 ) : (
-                                    <p>You will be redirected to the login page in 5 seconds.</p>
+                                    <p>You will be redirected to the login page in 3 seconds.</p>
                                 )}
                             </div>
 

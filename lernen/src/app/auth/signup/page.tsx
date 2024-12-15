@@ -65,6 +65,8 @@ export default function SignUpPage() {
             },
           });
       
+          console.log('Signup response:', { data, error: signUpError });
+      
           if (signUpError) {
             throw signUpError;
           }
