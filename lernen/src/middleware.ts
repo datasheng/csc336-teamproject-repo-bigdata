@@ -33,8 +33,9 @@ export async function middleware(request: NextRequest) {
 
   if (
     !user &&
-    // don't redirect any auth shit like login/signup
+    // don't redirect any auth shit like login/signup/selectrole
     !request.nextUrl.pathname.startsWith('/auth') &&
+    !request.nextUrl.pathname.startsWith('/selectrole') &&
     // don't redirect next.js internal shit
     !request.nextUrl.pathname.startsWith('/_next') &&
     // don't redirect api shit
@@ -43,7 +44,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname !== '/'
   ) {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
+    // redir to selectrole if not logged in
+    url.pathname = '/selectrole'
     return NextResponse.redirect(url)
   }
 

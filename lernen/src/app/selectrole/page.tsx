@@ -5,23 +5,22 @@ import { GraduationCap, School, BookPlus } from "lucide-react";
 import BlurFade from "@/components/ui/blur-fade";
 import { HoverEffect } from "@/components/ui/card-hover-effect";
 import Link from "next/link";
-
-{/* TODO : student page.tsx
-           Redirect back to Student Dashboard, going to have a signup */}
+import { useRouter } from 'next/navigation';
 
 export default function SelectRole() {
+  const router = useRouter();
+
   const roles = [
     {
       title: "Student",
       description: "Access your courses, schedules, and ratings.",
-      link: "/student/",
+      link: `/auth/signup?userType=st`,
       icon: GraduationCap,
     },
-    { // Change this to /selectrole/signup after we finish up the auth and ETC
-      // Can also change to /selectsemester/student to see the current dashboard in the making
+    {
       title: "Professor",
       description: "Manage your courses and student interactions.",
-      link: "/professor/", // do /professor to read professor dashboard
+      link: `/auth/signup?userType=prof`,
       icon: School,
     },
   ];
@@ -57,6 +56,16 @@ export default function SelectRole() {
             />
           </div>
 
+          {/* Add login text - following same format as signup stuff tim did */}
+          <p className="text-center text-sm text-gray-400 mt-8">
+            Already have an account?{" "}
+            <Link
+              href="/auth/login"
+              className="text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Login
+            </Link>
+          </p>
         </BlurFade>
       </div>
     </main>

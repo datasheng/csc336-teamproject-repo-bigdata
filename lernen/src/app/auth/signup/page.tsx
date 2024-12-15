@@ -1,16 +1,26 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
 import { UserPlus, Mail, Lock, User, Home, BookPlus } from "lucide-react";
 import Link from "next/link";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 
 {/* Add a Home Button to redirect you to homepage */ }
 export default function SignUpPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const userType = searchParams.get('userType');
+
+    // go role selection if no userType or wrong
+    useEffect(() => {
+        if (!userType || !['st', 'prof'].includes(userType)) {
+            router.push('/selectrole');
+        }
+    }, [userType, router]);
+
     const supabase = createClientComponentClient();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -71,7 +81,7 @@ export default function SignUpPage() {
                 userName: formData.fullName,
                 email: formData.email,
                 password: formData.password, 
-                userType: "Professor", 
+                userType: userType === "st" ? "Student" : "Professor",
                 userPremiumStatus: false,
             });
 

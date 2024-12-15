@@ -41,11 +41,13 @@ export default function LoginPage() {
 
             if (userError) throw userError;
 
-            // Redirect based on userType, 0 = student, 1 = professor
-            if (userData.userType) {
+            // Redirect based on userType, 'st' = student, 'prof' = professor
+            if (userData.userType === 'prof') {
                 router.push('/professor');
-            } else {
+            } else if (userData.userType === 'st') {
                 router.push('/student');
+            } else {
+                throw new Error('Invalid user type');
             }
 
             router.refresh();
@@ -209,7 +211,7 @@ export default function LoginPage() {
                             <p className="text-center text-sm text-gray-400">
                                 New User?{" "}
                                 <Link
-                                    href="/auth/signup"
+                                    href="/selectrole"
                                     className="text-blue-400 hover:text-blue-300 transition-colors"
                                 >
                                     Sign up
