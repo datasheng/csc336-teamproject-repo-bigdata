@@ -112,7 +112,7 @@ export default function Students() {
                                                         className="h-8 w-8 rounded-full"
                                                     />
                                                 </td>
-                                                <td className="p-3 font-medium">{student.name}</td>
+                                                <td className="p-3 text-gray-300 font-medium">{student.name}</td>
                                                 <td className="p-3 text-gray-300">{student.id}</td>
                                                 <td className="p-3 text-gray-300">{student.email}</td>
                                                 <td className="p-3 text-gray-300">{student.altEmail}</td>
