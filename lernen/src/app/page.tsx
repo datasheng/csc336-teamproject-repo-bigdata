@@ -48,7 +48,7 @@ export default function Home() {
             <div className="space-y-6">
               <h1 className="text-4xl font-bold leading-tight md:text-6xl">
                 Your future is created by
-                <span className="block bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent py-2">
                   What You're Going To Do Today
                 </span>
               </h1>
