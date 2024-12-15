@@ -53,7 +53,7 @@ export function TeamDropdown() {
             </button>
 
             <div
-                className={`absolute top-full mt-2 w-96 rounded-lg border border-gray-800 bg-black/95 backdrop-blur-sm shadow-xl
+                className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 w-96 rounded-lg border border-gray-800 bg-black/95 backdrop-blur-sm shadow-xl
                     transition-all duration-800 ease-in-out origin-top
                     ${isOpen
                         ? 'opacity-100 translate-y-0 scale-100'
