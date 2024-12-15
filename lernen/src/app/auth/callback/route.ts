@@ -5,11 +5,26 @@ import { createClient } from '@/utils/supabase/server';
 export async function GET(request: NextRequest) {
     const requestUrl = new URL(request.url);
     const code = requestUrl.searchParams.get('code');
-    const next = requestUrl.searchParams.get('next') || '/';
+    const token_hash = requestUrl.searchParams.get('token_hash');
     const type = requestUrl.searchParams.get('type');
+    const next = requestUrl.searchParams.get('next') || '/';
+
+    const supabase = await createClient();
+
+    if (token_hash) {
+        const { error } = await supabase.auth.verifyOtp({
+            token_hash,
+            type: type as any,
+        });
+        
+        if (error) {
+            return NextResponse.redirect(new URL('/auth/auth-code-error', request.url));
+        }
+
+        return NextResponse.redirect(new URL(next, request.url));
+    }
 
     if (code) {
-        const supabase = await createClient();
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         
         if (error) {
@@ -17,15 +32,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.redirect(new URL('/auth/auth-code-error', request.url));
         }
 
-        // if signup confirm ? redirect to confirm page
-        if (type === 'signup') {
-            return NextResponse.redirect(new URL('/auth/confirm', request.url));
-        }
-
-        // other types recovery, invite, etc
         return NextResponse.redirect(new URL(next, request.url));
     }
 
-    // no code = error page
     return NextResponse.redirect(new URL('/auth/auth-code-error', request.url));
 }
