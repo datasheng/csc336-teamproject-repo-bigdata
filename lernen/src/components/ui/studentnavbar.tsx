@@ -138,8 +138,8 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                         <div className="flex items-center space-x-3">
                             <div className="h-8 w-8 rounded-full bg-gray-800" />
                             <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white">Professor Name</span>
-                                <span className="text-xs text-gray-400">professor@lernen.com</span>
+                                <span className="text-sm font-medium text-white">Student Name</span>
+                                <span className="text-xs text-gray-400">student@lernen.com</span>
                             </div>
                         </div>
                     </div>

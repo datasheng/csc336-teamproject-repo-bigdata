@@ -18,6 +18,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import Chatbot from "@/components/ui/chatbot";
 
 // Dummy data structure that matches potential PostgreSQL schema
 const dummyCourses = {
@@ -90,18 +91,18 @@ const dummyCourses = {
 export default function StudentDashboard() {
     const [isNavCollapsed, setIsNavCollapsed] = useState(false);
     const [selectedSemester, setSelectedSemester] = useState('Fall 2024');
-    
+
     // Calculate semester statistics
     const currentCourses = dummyCourses[selectedSemester as keyof typeof dummyCourses];
     const totalCredits = currentCourses.reduce((sum, course) => sum + course.credits, 0);
     const totalAssignments = currentCourses.reduce((sum, course) => sum + course.assignments, 0);
     const upcomingDeadlines = currentCourses.reduce((sum, course) => sum + course.upcomingDeadlines, 0);
-    
+
     // Calculate GPA (assuming A=4.0, A-=3.7, B+=3.3, B=3.0)
     const gradePoints = {
         'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0
     };
-    
+
     const semesterGPA = currentCourses.reduce((sum, course) => {
         return sum + (gradePoints[course.grade as keyof typeof gradePoints] * course.credits);
     }, 0) / totalCredits;
@@ -188,11 +189,10 @@ export default function StudentDashboard() {
                                             <CardTitle className="text-blue-400">{course.name}</CardTitle>
                                             <CardDescription className="text-gray-400">{course.code}</CardDescription>
                                         </div>
-                                        <span className={`px-2 py-1 rounded-full text-xs ${
-                                            course.grade.startsWith('A') ? 'bg-green-500/20 text-green-400' :
+                                        <span className={`px-2 py-1 rounded-full text-xs ${course.grade.startsWith('A') ? 'bg-green-500/20 text-green-400' :
                                             course.grade.startsWith('B') ? 'bg-blue-500/20 text-blue-400' :
-                                            'bg-yellow-500/20 text-yellow-400'
-                                        }`}>
+                                                'bg-yellow-500/20 text-yellow-400'
+                                            }`}>
                                             {course.grade}
                                         </span>
                                     </div>
@@ -217,8 +217,8 @@ export default function StudentDashboard() {
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <span className="text-gray-400">Assignments:</span>
-                                            <span className="text-black">{course.assignments} 
-                                                {course.upcomingDeadlines > 0 && 
+                                            <span className="text-black">{course.assignments}
+                                                {course.upcomingDeadlines > 0 &&
                                                     <span className="text-yellow-400 ml-1">
                                                         ({course.upcomingDeadlines} due soon)
                                                     </span>
@@ -232,6 +232,7 @@ export default function StudentDashboard() {
                     </div>
                 </div>
             </main>
+            <Chatbot />
         </div>
     );
 }

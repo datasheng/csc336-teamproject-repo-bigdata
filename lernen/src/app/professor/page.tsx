@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Spotlight } from "@/components/ui/spotlight";
 import { Search, ChevronDown } from "lucide-react";
 import Navbar from '@/components/ui/navbar';
+import Chatbot from "@/components/ui/chatbot"
 
 export default function ProfessorDashboard() {
   const [selectedClass, setSelectedClass] = useState("");
@@ -138,6 +139,7 @@ export default function ProfessorDashboard() {
           </div>
         </div>
       </main>
+      <Chatbot />
     </div>
   );
 }
