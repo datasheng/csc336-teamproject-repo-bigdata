@@ -10,7 +10,8 @@ import {
     Users,
     ChevronLeft,
     ChevronRight,
-    ScrollText
+    ScrollText,
+    Star
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -57,6 +58,11 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                     label: 'Students',
                     icon: Users,
                     href: '/student/list'
+                },
+                {
+                    label: 'Professor Reviews',
+                    icon: Star,
+                    href: '/rating'
                 }
             ]
         },
