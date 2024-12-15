@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
 import { Mail, ArrowLeft, BookPlus } from "lucide-react";
 import Link from "next/link";
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function ForgotPasswordPage() {
@@ -13,30 +13,28 @@ export default function ForgotPasswordPage() {
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const router = useRouter();
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
         setSuccessMessage(null);
+        
         try {
-            const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/auth/confirm?type=recovery`,
             });
 
-            if (error) {
-                throw error;
-            }
+            if (error) throw error;
 
             setSuccessMessage("Password reset instructions have been sent to your email.");
-            // Optionally redirect after a delay
             setTimeout(() => {
-                router.push('/auth/login?message=Check your email to reset your password');
+                router.push('/auth/login');
             }, 2000);
 
         } catch (error) {
-            setError(error instanceof Error ? error.message : 'An error occurred while resetting password');
+            setError(error instanceof Error ? error.message : 'An error occurred');
         } finally {
             setIsLoading(false);
         }

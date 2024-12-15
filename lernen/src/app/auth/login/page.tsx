@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
 import { LogIn, Mail, Lock, BookPlus } from "lucide-react";
 import Link from "next/link";
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation';
 
 
@@ -16,7 +16,7 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
-    const supabase = createClientComponentClient();
+    const supabase = createClient()
 
     const handleEmailSignIn = async (e: React.FormEvent) => {
         e.preventDefault();

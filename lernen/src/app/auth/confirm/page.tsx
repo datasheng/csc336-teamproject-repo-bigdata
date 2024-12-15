@@ -9,7 +9,6 @@ import Link from "next/link";
 export default function EmailConfirmation() {
     const [isRedirecting, setIsRedirecting] = useState(false);
 
-    // Auto-redirect after 5 seconds
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsRedirecting(true);
@@ -79,4 +78,4 @@ export default function EmailConfirmation() {
             </div>
         </main>
     );
-}
+} 
