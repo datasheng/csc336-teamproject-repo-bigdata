@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { GraduationCap, BookOpen } from "lucide-react";
 
 interface Course {
   id: number;
@@ -17,10 +18,37 @@ interface ClassContainerProps {
 }
 
 const ClassContainer: React.FC<ClassContainerProps> = ({ courses }) => {
+  const totalCredits = courses.reduce((sum, course) => sum + course.credits, 0);
+
   return (
     <div className="w-full max-w-5xl px-4">
       <div className="bg-black/50 rounded-t-[2.5rem] border border-gray-800 min-h-[calc(100vh-15rem)]">
-        <div className="p-8 space-y-6 max-h-[calc(100vh-20rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+        {/* Stats Header */}
+        <div className="px-8 pt-6 pb-3 flex justify-between items-center border-b border-gray-800/50">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-2"
+          >
+            <BookOpen className="w-5 h-5 text-blue-400" />
+            <span className="text-gray-400">
+              Total Courses: <span className="text-white font-medium">{courses.length}</span>
+            </span>
+          </motion.div>
+          
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-2"
+          >
+            <GraduationCap className="w-5 h-5 text-blue-400" />
+            <span className="text-gray-400">
+              Total Credits: <span className="text-white font-medium">{totalCredits}</span>
+            </span>
+          </motion.div>
+        </div>
+
+        <div className="p-6 space-y-6 max-h-[calc(100vh-25rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
           {courses.map((course, index) => (
             <motion.div
               key={course.id}
@@ -91,7 +119,7 @@ const ClassContainer: React.FC<ClassContainerProps> = ({ courses }) => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12 mb-8 text-gray-500 text-base"
+              className="text-center py-8 text-gray-500 text-base"
             >
               No more classes to show
             </motion.div>
