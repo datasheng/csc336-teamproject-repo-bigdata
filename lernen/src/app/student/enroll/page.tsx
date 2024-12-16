@@ -136,6 +136,10 @@ export default function StudentCoursesPage() {
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [showOpenOnly, setShowOpenOnly] = useState(false);
 
+  const [termFilter, setTermFilter] = useState(currentTerm);
+  const [departmentFilter, setDepartmentFilter] = useState(currentDepartment);
+  const [creditsFilter, setCreditsFilter] = useState(currentCredits);
+
   const createQueryString = (params: Record<string, string>) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
     
@@ -185,6 +189,9 @@ export default function StudentCoursesPage() {
     router.push(
       `${pathname}?${createQueryString({
         q: searchInput,
+        term: termFilter,
+        department: departmentFilter,
+        credits: creditsFilter,
       })}`
     );
   };
@@ -231,14 +238,8 @@ export default function StudentCoursesPage() {
             {/* Filters Section */}
             <div className="w-full max-w-3xl mt-6 flex flex-wrap items-center gap-4">
               <Select
-                value={currentTerm}
-                onValueChange={(value) => {
-                  router.push(
-                    `${pathname}?${createQueryString({
-                      term: value,
-                    })}`
-                  );
-                }}
+                value={termFilter}
+                onValueChange={setTermFilter}
               >
                 <SelectTrigger className="w-[180px] bg-black border-gray-800">
                   <SelectValue placeholder="Select term" />
@@ -250,14 +251,8 @@ export default function StudentCoursesPage() {
               </Select>
 
               <Select
-                value={currentDepartment}
-                onValueChange={(value) => {
-                  router.push(
-                    `${pathname}?${createQueryString({
-                      department: value,
-                    })}`
-                  );
-                }}
+                value={departmentFilter}
+                onValueChange={setDepartmentFilter}
               >
                 <SelectTrigger className="w-[180px] bg-black border-gray-800">
                   <SelectValue placeholder="Select department" />
@@ -275,14 +270,8 @@ export default function StudentCoursesPage() {
                 type="number"
                 placeholder="Credits"
                 className="w-[120px] px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                value={currentCredits}
-                onChange={(e) => {
-                  router.push(
-                    `${pathname}?${createQueryString({
-                      credits: e.target.value,
-                    })}`
-                  );
-                }}
+                value={creditsFilter}
+                onChange={(e) => setCreditsFilter(e.target.value)}
                 min="1"
                 max="4"
               />
