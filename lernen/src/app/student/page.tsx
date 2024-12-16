@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
 import { Calendar, GraduationCap, Clock, MapPin } from "lucide-react";
 import Navbar from "@/components/ui/studentnavbar";
@@ -21,82 +21,79 @@ import {
 } from "@/components/ui/card";
 import Chatbot from "@/components/ui/chatbot";
 import BlurFade from "@/components/ui/blur-fade";
+import { createClient } from "@/utils/supabase/client";
 
-// Dummy data structure that matches potential PostgreSQL schema
-const dummyCourses = {
-  "Fall 2024": [
-    {
-      id: 1,
-      name: "Algorithms",
-      code: "CSC 382",
-      professor: "Dr. Smith",
-      schedule: "Mon/Wed 10:00 AM - 11:30 AM",
-      room: "Room 405",
-      credits: 3,
-      grade: "A-",
-      assignments: 12,
-      upcomingDeadlines: 2,
-    },
-    {
-      id: 2,
-      name: "Database Systems",
-      code: "CSC 336",
-      professor: "Dr. Johnson",
-      schedule: "Tue/Thu 2:00 PM - 3:30 PM",
-      room: "Room 301",
-      credits: 3,
-      grade: "B+",
-      assignments: 8,
-      upcomingDeadlines: 1,
-    },
-    {
-      id: 3,
-      name: "Software Engineering",
-      code: "CSC 322",
-      professor: "Dr. Williams",
-      schedule: "Mon/Wed 2:00 PM - 3:30 PM",
-      room: "Room 405",
-      credits: 4,
-      grade: "A",
-      assignments: 15,
-      upcomingDeadlines: 3,
-    },
-  ],
-  "Spring 2024": [
-    {
-      id: 4,
-      name: "Operating Systems",
-      code: "CSC 332",
-      professor: "Dr. Brown",
-      schedule: "Mon/Wed 11:00 AM - 12:30 PM",
-      room: "Room 402",
-      credits: 3,
-      grade: "B",
-      assignments: 10,
-      upcomingDeadlines: 0,
-    },
-    {
-      id: 5,
-      name: "Computer Networks",
-      code: "CSC 345",
-      professor: "Dr. Davis",
-      schedule: "Tue/Thu 1:00 PM - 2:30 PM",
-      room: "Room 304",
-      credits: 3,
-      grade: "A-",
-      assignments: 9,
-      upcomingDeadlines: 0,
-    },
-  ],
-};
+// Define types for our data
+interface Professor {
+  firstName: string;
+  lastName: string;
+}
+
+interface Course {
+  courseID: string;
+  courseCode: string;
+  coursePrefix: string;
+  courseTitle: string;
+  credits: number;
+  professor: Professor;
+}
+
+interface ScheduleCourse {
+  course: Course;
+}
+
+interface Schedule {
+  scheduleID: string;
+  semester: string;
+  scheduleCourse: ScheduleCourse[];
+}
+
+interface UserData {
+  username: string;
+  email: string;
+  schedule: Schedule[];
+}
 
 export default function StudentDashboard() {
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState("Fall 2024");
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchUserData() {
+      try {
+        const response = await fetch("/api/student");
+        const data = await response.json();
+        setUserData(data);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUserData();
+  }, []);
+
+  // Get current semester's courses
+  const currentSchedule = userData?.schedule?.find(
+    (s) => s.semester === selectedSemester
+  );
+  
+  const currentCourses = currentSchedule?.scheduleCourse.map((sc) => ({
+    id: sc.course.courseID,
+    name: sc.course.courseTitle,
+    code: `${sc.course.coursePrefix} ${sc.course.courseCode}`,
+    professor: `${sc.course.professor.firstName} ${sc.course.professor.lastName}`,
+    credits: sc.course.credits,
+    // You might want to add these fields to your database schema
+    grade: "N/A",
+    assignments: 0,
+    upcomingDeadlines: 0,
+  })) || [];
 
   // Calculate semester statistics
-  const currentCourses =
-    dummyCourses[selectedSemester as keyof typeof dummyCourses];
   const totalCredits = currentCourses.reduce(
     (sum, course) => sum + course.credits,
     0
@@ -143,13 +140,13 @@ export default function StudentDashboard() {
 
 {/* Header Section */}
 <div className="relative z-10 flex flex-col items-center mt-[12vh]">
-  <BlurFade delay={0} inView>
+  <BlurFade delay={0.54} inView>
     <h1 className="text-6xl font-bold tracking-[0.04em] bg-gradient-to-b from-blue-400/90 via-blue-400/70 to-blue-400/50 bg-clip-text text-transparent">
-      Hi Jawad!
+      Hi {userData?.username || "Student"}!
     </h1>
   </BlurFade>
   
-  <BlurFade delay={0.1} inView>
+  <BlurFade delay={0.5} inView>
     <h2 className="text-3xl text-gray-400 mt-6 font-medium tracking-wide">
       Your Classes for {selectedSemester}
     </h2>
