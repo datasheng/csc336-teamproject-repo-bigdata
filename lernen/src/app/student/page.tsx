@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Chatbot from "@/components/ui/chatbot";
+import BlurFade from "@/components/ui/blur-fade";
 
 // Dummy data structure that matches potential PostgreSQL schema
 const dummyCourses = {
@@ -142,12 +143,17 @@ export default function StudentDashboard() {
 
 {/* Header Section */}
 <div className="relative z-10 flex flex-col items-center mt-[12vh]">
-  <h1 className="text-6xl font-bold text-blue-400 tracking-[0.04em]">
-    Hi Jawad!
-  </h1>
-  <h2 className="text-3xl text-gray-400 mt-6 font-medium tracking-wide">
-    Your Classes
-  </h2>
+  <BlurFade delay={0} inView>
+    <h1 className="text-6xl font-bold tracking-[0.04em] bg-gradient-to-b from-blue-400/90 via-blue-400/70 to-blue-400/50 bg-clip-text text-transparent">
+      Hi Jawad!
+    </h1>
+  </BlurFade>
+  
+  <BlurFade delay={0.1} inView>
+    <h2 className="text-3xl text-gray-400 mt-6 font-medium tracking-wide">
+      Your Classes for {selectedSemester}
+    </h2>
+  </BlurFade>
 </div>
 
           {/* Semester Select */}

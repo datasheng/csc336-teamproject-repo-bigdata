@@ -1,17 +1,22 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
-import { Calendar, Search, BookOpen, Clock, MapPin, Users, Plus, Check, GraduationCap } from 'lucide-react';
-import StudentNavbar from '@/components/ui/studentnavbar';
+import { Search, Users, Clock, MapPin, Plus, Check } from "lucide-react";
+import StudentNavbar from "@/components/ui/studentnavbar";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import CollapsibleSection from '@/components/ui/collapsible';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import toast from "react-hot-toast";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { Switch } from "@/components/ui/switch";
 
 // Helper function to format time
 const formatTime = (time: string) => {
@@ -40,11 +45,12 @@ const availableCourses = [
         id: 1,
         name: "Introduction to Computer Science",
         code: "CSC 103",
-        professor: "Wes",
+        professor: "Dr. Wes Anderson",
         location: "Room 405",
         startTime: "10:00",
         endTime: "11:30",
         dayOfWeek: "Monday",
+        schedule: "Mon/Wed 10:00 AM - 11:30 AM",
         capacity: 40,
         enrolled: 35,
         description: "Introduction to programming concepts and computational thinking."
@@ -58,6 +64,7 @@ const availableCourses = [
         startTime: "13:00",
         endTime: "14:30",
         dayOfWeek: "Wednesday",
+        schedule: "Mon/Wed 1:00 PM - 2:30 PM",
         capacity: 35,
         enrolled: 30,
         description: "Advanced programming concepts and data structure implementations."
@@ -113,301 +120,272 @@ const previouslyEnrolledCourses = {
 };
 
 export default function StudentCoursesPage() {
-    const [isNavCollapsed, setIsNavCollapsed] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [showCalendar, setShowCalendar] = useState(false);
-    const [enrolledCourses, setEnrolledCourses] = useState<typeof availableCourses>([]);
-    const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+  const [enrolledCourses, setEnrolledCourses] = useState<typeof availableCourses>([]);
+  
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-    const handleEnroll = (course: typeof availableCourses[0]) => {
-        if (!enrolledCourses.find(c => c.id === course.id)) {
-            setEnrolledCourses([...enrolledCourses, course]);
-        }
-    };
+  // Get search params with defaults
+  const currentTerm = searchParams.get("term") || "Fall 2024";
+  const currentDepartment = searchParams.get("department") || "All";
+  const currentCredits = searchParams.get("credits") || "";
+  const searchQuery = searchParams.get("q") || "";
 
-    const handleUnenroll = (courseId: number) => {
-        setEnrolledCourses(enrolledCourses.filter(course => course.id !== courseId));
-    };
+  const [searchInput, setSearchInput] = useState(searchQuery);
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
 
-    const isEnrolled = (courseId: number) => {
-        return enrolledCourses.some(course => course.id === courseId);
-    };
+  const createQueryString = (params: Record<string, string>) => {
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+    
+    // Update or delete params
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === null || value === "") {
+        current.delete(key);
+      } else {
+        current.set(key, value);
+      }
+    });
 
-    const filteredCourses = availableCourses.filter(course =>
-        course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.code.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return current.toString();
+  };
 
-    const getCourseForSlot = (day: string, time: string) => {
-        return enrolledCourses.find(course =>
-            course.dayOfWeek === day &&
-            timeToMinutes(course.startTime) <= timeToMinutes(time) &&
-            timeToMinutes(course.endTime) > timeToMinutes(time)
+  const handleEnroll = (course: typeof availableCourses[0]) => {
+    if (!enrolledCourses.find(c => c.id === course.id)) {
+        setEnrolledCourses([...enrolledCourses, course]);
+        const updatedCourses = availableCourses.map(c => 
+            c.id === course.id ? { ...c, enrolled: c.enrolled + 1 } : c
         );
-    };
+        availableCourses.splice(0, availableCourses.length, ...updatedCourses);
+        
+        toast.success(`Enrolled in ${course.name}`, {
+            icon: '📚',
+        });
+    }
+  };
 
-    const timeToMinutes = (time: string) => {
-        const [hours, minutes] = time.split(':').map(Number);
-        return hours * 60 + minutes;
-    };
-
-    const getCourseHeight = (course: typeof availableCourses[0]) => {
-        const startMinutes = timeToMinutes(course.startTime);
-        const endMinutes = timeToMinutes(course.endTime);
-        const duration = endMinutes - startMinutes;
-        return (duration / 60) * 100;
-    };
-
-    // Calculate total credits and GPA
-    const totalCredits = Object.values(previouslyEnrolledCourses)
-        .flat()
-        .reduce((sum, course) => sum + course.credits, 0);
-
-    const gpa = Object.values(previouslyEnrolledCourses)
-        .flat()
-        .reduce((sum, course) => {
-            const gradePoints = {
-                'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0,
-                'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'F': 0.0
-            };
-            return sum + (gradePoints[course.finalGrade as keyof typeof gradePoints] * course.credits);
-        }, 0) / totalCredits;
-
-    return (
-        <div className="flex h-screen bg-black overflow-hidden">
-            <StudentNavbar onCollapse={setIsNavCollapsed} />
-
-            <main className={`flex-1 transition-all duration-300 ${isNavCollapsed ? 'ml-16' : 'ml-64'}`}>
-                <div className="relative min-h-screen bg-black/[0.96] text-white p-8">
-                    <Spotlight
-                        className="-top-40 right-0 md:right-60 md:-top-20"
-                        fill="#60A5FA"
-                    />
-
-                    {/* Header Section */}
-                    <div className="relative z-10 flex justify-between items-center mb-8">
-                        <div>
-                            <h1 className="text-2xl font-bold text-blue-400">Course Enrollment</h1>
-                            <p className="text-gray-400 mt-1">Browse and enroll in available courses</p>
-                        </div>
-
-                        <button
-                            onClick={() => setShowCalendar(!showCalendar)}
-                            className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-400 transition-colors"
-                        >
-                            <Calendar className="h-4 w-4" />
-                            <span>{showCalendar ? "View Courses" : "View Schedule"}</span>
-                        </button>
-                    </div>
-
-                    {!showCalendar ? (
-                        <>
-                            {/* Search Bar */}
-                            <div className="relative z-10 mb-6">
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search courses..."
-                                        className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Course Grid */}
-                            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredCourses.map((course) => (
-                                    <Card key={course.id} className="bg-black/50 border-gray-800">
-                                        <CardHeader>
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <CardTitle className="text-blue-400">{course.name}</CardTitle>
-                                                    <CardDescription className="text-gray-400">{course.code}</CardDescription>
-                                                </div>
-                                                <button
-                                                    onClick={() => isEnrolled(course.id) ? handleUnenroll(course.id) : handleEnroll(course)}
-                                                    className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${isEnrolled(course.id)
-                                                        ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                                                        : 'bg-blue-500 text-white hover:bg-blue-400'
-                                                        }`}
-                                                >
-                                                    {isEnrolled(course.id) ? (
-                                                        <>
-                                                            <Check className="h-4 w-4" />
-                                                            <span>Enrolled</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Plus className="h-4 w-4" />
-                                                            <span>Enroll</span>
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex items-center text-gray-400">
-                                                    <Users className="h-4 w-4 mr-2" />
-                                                    <span>Professor: {course.professor}</span>
-                                                </div>
-                                                <div className="flex items-center text-gray-400">
-                                                    <Clock className="h-4 w-4 mr-2" />
-                                                    <span>{course.dayOfWeek} {formatTime(course.startTime)} - {formatTime(course.endTime)}</span>
-                                                </div>
-                                                <div className="flex items-center text-gray-400">
-                                                    <MapPin className="h-4 w-4 mr-2" />
-                                                    <span>{course.location}</span>
-                                                </div>
-                                                <div className="mt-4">
-                                                    <div className="flex justify-between text-sm text-gray-400 mb-1">
-                                                        <span>Enrollment</span>
-                                                        <span>{course.enrolled}/{course.capacity}</span>
-                                                    </div>
-                                                    <div className="h-2 bg-gray-800 rounded-full">
-                                                        <div
-                                                            className="h-2 bg-blue-500 rounded-full transition-all"
-                                                            style={{
-                                                                width: `${(course.enrolled / course.capacity) * 100}%`
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-
-                            {/* Previous Courses Section */}
-                            <div className="mt-8">
-                                <CollapsibleSection
-                                    title="Previous Courses"
-                                    icon={GraduationCap}
-                                    stats={[
-                                        { label: "Total Credits", value: totalCredits },
-                                        { label: "GPA", value: gpa.toFixed(2) }
-                                    ]}
-                                >
-                                    <div className="space-y-6">
-                                        {/* Semester selector buttons */}
-                                        <div className="flex flex-wrap gap-2">
-                                            {Object.keys(previouslyEnrolledCourses).map((semester) => (
-                                                <button
-                                                    key={semester}
-                                                    onClick={() => setSelectedSemester(semester === selectedSemester ? null : semester)}
-                                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${semester === selectedSemester
-                                                        ? 'bg-blue-500 text-white'
-                                                        : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
-                                                        }`}
-                                                >
-                                                    {semester}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Previous courses grid */}
-                                        {selectedSemester && (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                {previouslyEnrolledCourses[selectedSemester].map((course: any) => (
-                                                    <Card key={course.id} className="bg-black/50 border-gray-800">
-                                                        <CardHeader>
-                                                            <div className="flex justify-between items-start">
-                                                                <div>
-                                                                    <CardTitle className="text-blue-400">{course.name}</CardTitle>
-                                                                    <CardDescription className="text-gray-400">{course.code}</CardDescription>
-                                                                </div>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${course.finalGrade.startsWith('A') ? 'bg-green-500/20 text-green-400' :
-                                                                    course.finalGrade.startsWith('B') ? 'bg-blue-500/20 text-blue-400' :
-                                                                        'bg-yellow-500/20 text-yellow-400'
-                                                                    }`}>
-                                                                    {course.finalGrade}
-                                                                </span>
-                                                            </div>
-                                                        </CardHeader>
-                                                        <CardContent>
-                                                            <div className="space-y-2 text-sm">
-                                                                <div className="flex items-center text-gray-400">
-                                                                    <Users className="h-4 w-4 mr-2" />
-                                                                    <span>Professor: {course.professor}</span>
-                                                                </div>
-                                                                <div className="flex items-center text-gray-400">
-                                                                    <Clock className="h-4 w-4 mr-2" />
-                                                                    <span>{course.schedule}</span>
-                                                                </div>
-                                                                <div className="flex items-center text-gray-400">
-                                                                    <MapPin className="h-4 w-4 mr-2" />
-                                                                    <span>{course.location}</span>
-                                                                </div>
-                                                                <div className="mt-2 pt-2 border-t border-gray-800">
-                                                                    <span className="text-gray-400">Credits: {course.credits}</span>
-                                                                </div>
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </CollapsibleSection>
-                            </div>
-                        </>
-                    ) : (
-
-                        // Calendar View
-                        <div className="relative z-10 h-[calc(100vh-200px)] overflow-hidden">
-                            <div className="h-full overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-track-black scrollbar-thumb-blue-600">
-                                <div className="min-w-[800px] bg-black/50 rounded-lg border border-gray-800">
-                                    <div className="grid grid-cols-8 border-b border-gray-800">
-                                        <div className="p-4 text-gray-400">Time</div>
-                                        {daysOfWeek.map(day => (
-                                            <div key={day} className="p-4 text-gray-400 font-medium border-l border-gray-800">
-                                                {day}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="relative">
-                                        {timeSlots.map(time => (
-                                            <div key={time} className="grid grid-cols-8 border-b border-gray-800">
-                                                <div className="p-4 text-gray-400">{formatTime(time)}</div>
-                                                {daysOfWeek.map(day => {
-                                                    const course = getCourseForSlot(day, time);
-                                                    const isStartTime = course && course.startTime === time;
-
-                                                    return (
-                                                        <div key={day} className="p-4 border-l border-gray-800 relative min-h-[100px]">
-                                                            {course && isStartTime && (
-                                                                <div
-                                                                    className="absolute left-0 right-0 bg-blue-500/10 rounded-lg border border-blue-500/20 p-2 mx-2"
-                                                                    style={{
-                                                                        height: `${getCourseHeight(course)}px`,
-                                                                        zIndex: 20,
-                                                                        backdropFilter: 'blur(8px)',
-                                                                    }}
-                                                                >
-                                                                    <div className="relative z-30">
-                                                                        <p className="text-blue-400 font-medium">{course.name}</p>
-                                                                        <p className="text-sm text-gray-400">{course.location}</p>
-                                                                        <p className="text-sm text-gray-400">
-                                                                            {`${formatTime(course.startTime)} - ${formatTime(course.endTime)}`}
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </main>
-        </div>
+  const handleUnenroll = (courseId: number) => {
+    setEnrolledCourses(enrolledCourses.filter(course => course.id !== courseId));
+    const updatedCourses = availableCourses.map(c => 
+        c.id === courseId ? { ...c, enrolled: c.enrolled - 1 } : c
     );
+    availableCourses.splice(0, availableCourses.length, ...updatedCourses);
+    
+    toast('Successfully unenrolled', {
+        icon: '🔄',
+    });
+  };
+
+  const isEnrolled = (courseId: number) => {
+    return enrolledCourses.some(course => course.id === courseId);
+  };
+
+  const handleSearch = () => {
+    router.push(
+      `${pathname}?${createQueryString({
+        q: searchInput,
+      })}`
+    );
+  };
+
+  return (
+    <div className="flex h-screen bg-black overflow-hidden">
+      <StudentNavbar onCollapse={setIsNavCollapsed} />
+
+      <main className={`flex-1 transition-all duration-300 ${isNavCollapsed ? "ml-16" : "ml-64"}`}>
+        <div className="relative min-h-screen bg-black/[0.96] text-white p-8">
+          <Spotlight className="-top-40 right-0 md:right-60 md:-top-20" fill="#60A5FA" />
+
+          {/* Header Section */}
+          <div className="relative z-10 flex flex-col items-center mt-[12vh] mb-12">
+            <h1 className="text-6xl font-bold tracking-[0.04em] bg-gradient-to-b from-blue-400/90 via-blue-400/70 to-blue-400/50 bg-clip-text text-transparent mb-8">
+              Course Enrollment
+            </h1>
+
+            {/* Search Bar and Button */}
+            <div className="w-full max-w-3xl flex items-center gap-4">
+              <div className="flex-1 relative flex items-center">
+                <Search className="absolute left-4 h-5 w-5 text-gray-500 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search for courses..."
+                  className="w-full pl-12 pr-4 h-12 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500 text-lg"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
+                />
+              </div>
+              <Button 
+                onClick={handleSearch}
+                className="h-12 px-6 bg-blue-500 hover:bg-blue-600 flex items-center justify-center"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Filters Section */}
+            <div className="w-full max-w-3xl mt-6 flex flex-wrap items-center gap-4">
+              <Select
+                value={currentTerm}
+                onValueChange={(value) => {
+                  router.push(
+                    `${pathname}?${createQueryString({
+                      term: value,
+                    })}`
+                  );
+                }}
+              >
+                <SelectTrigger className="w-[180px] bg-black border-gray-800">
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Fall 2024">Fall 2024</SelectItem>
+                  <SelectItem value="Spring 2024">Spring 2024</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={currentDepartment}
+                onValueChange={(value) => {
+                  router.push(
+                    `${pathname}?${createQueryString({
+                      department: value,
+                    })}`
+                  );
+                }}
+              >
+                <SelectTrigger className="w-[180px] bg-black border-gray-800">
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Departments</SelectItem>
+                  <SelectItem value="CSC">Computer Science</SelectItem>
+                  <SelectItem value="MATH">Mathematics</SelectItem>
+                  <SelectItem value="ENGL">English</SelectItem>
+                  <SelectItem value="PHYS">Physics</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <input
+                type="number"
+                placeholder="Credits"
+                className="w-[120px] px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                value={currentCredits}
+                onChange={(e) => {
+                  router.push(
+                    `${pathname}?${createQueryString({
+                      credits: e.target.value,
+                    })}`
+                  );
+                }}
+                min="1"
+                max="4"
+              />
+
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={showOpenOnly}
+                  onCheckedChange={setShowOpenOnly}
+                  className="data-[state=checked]:bg-blue-500"
+                />
+                <label className="text-sm text-gray-400">
+                  Show Open Classes Only
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Course Grid */}
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {availableCourses.map((course, index) => (
+                <motion.div
+                    key={course.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                    <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    >
+                        <Card className="bg-black/30 border-gray-800 hover:bg-black/40 transition-all duration-300 hover:border-gray-700">
+                            <CardHeader>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <CardTitle className="text-blue-400">{course.name}</CardTitle>
+                                        <CardDescription className="text-lg font-medium text-gray-200">
+                                            {course.code}
+                                        </CardDescription>
+                                    </div>
+                                    <motion.button
+                                        onClick={() => isEnrolled(course.id) ? handleUnenroll(course.id) : handleEnroll(course)}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.99 }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 5 }}
+                                        className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+                                            isEnrolled(course.id)
+                                                ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                                                : "bg-blue-500 text-white hover:bg-blue-400"
+                                        }`}
+                                    >
+                                        {isEnrolled(course.id) ? (
+                                            <>
+                                                <Check className="h-4 w-4" />
+                                                <span>Enrolled</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Plus className="h-4 w-4" />
+                                                <span>Enroll</span>
+                                            </>
+                                        )}
+                                    </motion.button>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="flex items-center text-gray-400">
+                                        <Users className="h-4 w-4 mr-2" />
+                                        <span>Professor: {course.professor}</span>
+                                    </div>
+                                    <div className="flex items-center text-gray-400">
+                                        <Clock className="h-4 w-4 mr-2" />
+                                        <span>{course.schedule}</span>
+                                    </div>
+                                    <div className="flex items-center text-gray-400">
+                                        <MapPin className="h-4 w-4 mr-2" />
+                                        <span>{course.location}</span>
+                                    </div>
+                                    
+                                    <div className="mt-4">
+                                        <div className="flex justify-between text-sm text-gray-400 mb-2">
+                                            <span>Available Seats</span>
+                                            <span>{course.enrolled}/{course.capacity}</span>
+                                        </div>
+                                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${(course.enrolled / course.capacity) * 100}%` }}
+                                                transition={{ duration: 0.5, ease: "easeOut" }}
+                                                className="h-full bg-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </motion.div>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }
