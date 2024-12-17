@@ -201,7 +201,12 @@ export default function StudentCoursesPage() {
 
       if (!response.ok) {
         if (data.prerequisites) {
-          toast.error(`Missing prerequisites: ${data.prerequisites.join(', ')}`);
+          const prereqList = data.prerequisites
+            .map((prereq: { code: string, title: string }) => 
+              `${prereq.code} (${prereq.title})`
+            )
+            .join(', ');
+          toast.error(`Missing prerequisites: ${prereqList}`);
         } else {
           toast.error(data.error || 'Failed to enroll in course');
         }
