@@ -5,7 +5,7 @@ import { GraduationCap, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Course {
-  id: number;
+  id: string | number;
   name: string;
   code: string;
   professor: string;

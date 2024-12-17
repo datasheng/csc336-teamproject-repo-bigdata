@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
-import { BookOpen, Users, Clock, MapPin } from "lucide-react";
+import { BookOpen, Users, Clock, MapPin, Plus, Hash, GraduationCap } from "lucide-react";
 import Navbar from "@/components/ui/navbar";
 import {
   Card,
@@ -20,10 +20,11 @@ import {
 } from "@/components/ui/select";
 import BlurFade from "@/components/ui/blur-fade";
 import ClassContainer from "@/components/ui/classcontainer";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 
 interface ProfessorData {
   firstName: string;
@@ -76,20 +77,31 @@ export default function ProfessorDashboard() {
       room: ""
     }]
   });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newCourse, setNewCourse] = useState({
+    name: "",
+    code: "",
+    startTime: "",
+    endTime: "",
+    location: "",
+    dayOfWeek: "Monday"
+  });
+
+  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+  const fetchProfessorData = async () => {
+    try {
+      const response = await fetch("/api/professor");
+      const data = await response.json();
+      setProfessorData(data);
+    } catch (error) {
+      console.error("Error fetching professor data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchProfessorData() {
-      try {
-        const response = await fetch("/api/professor");
-        const data = await response.json();
-        setProfessorData(data);
-      } catch (error) {
-        console.error("Error fetching professor data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchProfessorData();
   }, []);
 
@@ -121,7 +133,11 @@ export default function ProfessorDashboard() {
     credits: course.credits
   })) || [];
 
-  const handleCreateCourse = async () => {
+  const handleCreateCourse = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
     try {
       const response = await fetch('/api/professor/course', {
         method: 'POST',
@@ -136,6 +152,7 @@ export default function ProfessorDashboard() {
       const data = await response.json();
       toast.success('Course created successfully');
       setIsCreateDialogOpen(false);
+      setIsDialogOpen(false); // Close both dialogs
       // Refresh the course list
       fetchProfessorData();
     } catch (error) {
@@ -166,44 +183,62 @@ export default function ProfessorDashboard() {
 
           {/* Stats Cards */}
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-            <Card className="bg-black/30 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-blue-400">Total Students</CardTitle>
-                <CardDescription>Across all courses</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold text-white">{totalStudents}</p>
-                <p className="text-sm text-gray-400">
-                  {capacityPercentage}% capacity filled
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <Card className="bg-black/30 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="text-blue-400">Total Students</CardTitle>
+                  <CardDescription>Across all courses</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-white">{totalStudents}</p>
+                  <p className="text-sm text-gray-400">
+                    {capacityPercentage}% capacity filled
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            <Card className="bg-black/30 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-blue-400">Active Courses</CardTitle>
-                <CardDescription>Current semester</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold text-white">{totalCourses}</p>
-                <p className="text-sm text-gray-400">
-                  Teaching load: {totalCourses * 3} credits
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              <Card className="bg-black/30 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="text-blue-400">Active Courses</CardTitle>
+                  <CardDescription>Current semester</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-white">{totalCourses}</p>
+                  <p className="text-sm text-gray-400">
+                    Teaching load: {totalCourses * 3} credits
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            <Card className="bg-black/30 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-blue-400">Rating</CardTitle>
-                <CardDescription>Overall performance</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold text-white">{professorData?.avgRating?.toFixed(1) || "0.0"}</p>
-                <p className="text-sm text-gray-400">
-                  Based on student feedback
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
+              <Card className="bg-black/30 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="text-blue-400">Rating</CardTitle>
+                  <CardDescription>Overall performance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-white">{professorData?.avgRating?.toFixed(1) || "0.0"}</p>
+                  <p className="text-sm text-gray-400">
+                    Based on student feedback
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
 
@@ -240,77 +275,112 @@ export default function ProfessorDashboard() {
 
           {/* Create Course Dialog */}
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent className="bg-black border border-gray-800">
+            <DialogContent className="bg-black/90 border border-gray-800 text-white">
               <DialogHeader>
                 <DialogTitle className="text-blue-400">Create New Course</DialogTitle>
+                <DialogDescription className="text-gray-400">
+                  Add a new course to your teaching schedule.
+                </DialogDescription>
               </DialogHeader>
-              
-              <div className="space-y-4">
+
+              <form onSubmit={handleCreateCourse} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-400">Course Name</label>
+                  <div className="relative">
+                    <BookOpen className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                    <input
+                      type="text"
+                      required
+                      className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                      placeholder="Introduction to Computer Science"
+                      value={formData.courseTitle}
+                      onChange={(e) => setFormData({ ...formData, courseTitle: e.target.value })}
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="space-y-2">
                     <label className="text-sm text-gray-400">Course Prefix</label>
-                    <Input
-                      value={formData.coursePrefix}
-                      onChange={(e) => setFormData({...formData, coursePrefix: e.target.value})}
-                      className="bg-black border-gray-800"
-                    />
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                      <input
+                        type="text"
+                        required
+                        className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                        placeholder="CSC"
+                        value={formData.coursePrefix}
+                        onChange={(e) => setFormData({ ...formData, coursePrefix: e.target.value })}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-400">Course Code</label>
-                    <Input
-                      value={formData.courseCode}
-                      onChange={(e) => setFormData({...formData, courseCode: e.target.value})}
-                      className="bg-black border-gray-800"
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <label className="text-sm text-gray-400">Course Title</label>
-                  <Input
-                    value={formData.courseTitle}
-                    onChange={(e) => setFormData({...formData, courseTitle: e.target.value})}
-                    className="bg-black border-gray-800"
-                  />
+                  <div className="space-y-2">
+                    <label className="text-sm text-gray-400">Course Code</label>
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                      <input
+                        type="text"
+                        required
+                        className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                        placeholder="101"
+                        value={formData.courseCode}
+                        onChange={(e) => setFormData({ ...formData, courseCode: e.target.value })}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="space-y-2">
                     <label className="text-sm text-gray-400">Capacity</label>
-                    <Input
-                      type="number"
-                      value={formData.capacity}
-                      onChange={(e) => setFormData({...formData, capacity: parseInt(e.target.value)})}
-                      className="bg-black border-gray-800"
-                    />
+                    <div className="relative">
+                      <Users className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                      <input
+                        type="number"
+                        required
+                        className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                        value={formData.capacity}
+                        onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+                      />
+                    </div>
                   </div>
-                  <div>
+
+                  <div className="space-y-2">
                     <label className="text-sm text-gray-400">Credits</label>
-                    <Input
-                      type="number"
-                      value={formData.credits}
-                      onChange={(e) => setFormData({...formData, credits: parseInt(e.target.value)})}
-                      className="bg-black border-gray-800"
-                    />
+                    <div className="relative">
+                      <GraduationCap className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                      <input
+                        type="number"
+                        required
+                        className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                        value={formData.credits}
+                        onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) })}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsCreateDialogOpen(false)}
-                    className="border-gray-800"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleCreateCourse}
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
-                    Create Course
-                  </Button>
-                </DialogFooter>
-              </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-blue-500 text-white hover:bg-blue-400"
+                >
+                  Create Course
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center space-x-2 bg-blue-500 text-white hover:bg-blue-400">
+                <Plus className="h-4 w-4" />
+                <span>Create Course</span>
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent className="bg-black/90 border border-gray-800 text-white">
+              {/* Rest of the dialog content you provided */}
             </DialogContent>
           </Dialog>
         </div>
