@@ -83,19 +83,18 @@ export default function StudentDashboard() {
     (s) => s.semester === selectedSemester
   );
   
-  const courses = currentSchedule?.scheduleCourse 
+  const courses: ScheduleCourse[] = currentSchedule?.scheduleCourse 
     ? Array.isArray(currentSchedule.scheduleCourse) 
       ? currentSchedule.scheduleCourse 
       : Object.values(currentSchedule.scheduleCourse)
     : [];
 
-  const currentCourses = courses.map((sc) => ({
+  const currentCourses = courses.map((sc: ScheduleCourse) => ({
     id: sc.course.courseID,
     name: sc.course.courseTitle,
     code: `${sc.course.coursePrefix} ${sc.course.courseCode}`,
     professor: `${sc.course.professor.firstName} ${sc.course.professor.lastName}`,
     credits: sc.course.credits,
-    // You might want to add these fields to your database schema
     grade: "N/A",
     assignments: 0,
     upcomingDeadlines: 0,

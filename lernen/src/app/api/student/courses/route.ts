@@ -1,6 +1,19 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
+interface Course {
+  id: number;
+  name: string;
+  code: string;
+  professor: string;
+  location: string;
+  schedule: string;
+  enrolled: number;
+  capacity: number;
+  department: string;
+  credits: number;
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -28,7 +41,7 @@ export async function GET() {
     }
 
     // Transform the data to match the frontend expectations
-    const courses = data.map(course => ({
+    const courses = data.map((course: any): Course => ({
       id: course.course_id,
       name: course.course_title,
       code: `${course.course_prefix} ${course.course_code}`,

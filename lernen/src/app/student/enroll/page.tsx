@@ -18,6 +18,19 @@ import toast from "react-hot-toast";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Switch } from "@/components/ui/switch";
 
+interface Course {
+  id: number;
+  name: string;
+  code: string;
+  professor: string;
+  location: string;
+  schedule: string;
+  enrolled: number;
+  capacity: number;
+  department: string;
+  credits: number;
+}
+
 // Helper function to format time
 const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':').map(Number);
@@ -39,86 +52,6 @@ const generateTimeSlots = () => {
 const timeSlots = generateTimeSlots();
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-// Dummy data structure
-const availableCourses = [
-    {
-        id: 1,
-        name: "Introduction to Computer Science",
-        code: "CSC 103",
-        professor: "Dr. Wes Anderson",
-        location: "Room 405",
-        startTime: "10:00",
-        endTime: "11:30",
-        dayOfWeek: "Monday",
-        schedule: "Mon/Wed 10:00 AM - 11:30 AM",
-        capacity: 40,
-        enrolled: 35,
-        description: "Introduction to programming concepts and computational thinking."
-    },
-    {
-        id: 2,
-        name: "Data Structures",
-        code: "CSC 201",
-        professor: "Dr. Johnson",
-        location: "Room 302",
-        startTime: "13:00",
-        endTime: "14:30",
-        dayOfWeek: "Wednesday",
-        schedule: "Mon/Wed 1:00 PM - 2:30 PM",
-        capacity: 35,
-        enrolled: 30,
-        description: "Advanced programming concepts and data structure implementations."
-    }
-];
-
-// Previous courses data 
-const previouslyEnrolledCourses = {
-    'Spring 2024': [
-        {
-            id: 101,
-            name: "Advanced Data Structures",
-            code: "CSC 220",
-            professor: "Dr. Anderson",
-            finalGrade: "A",
-            credits: 3,
-            location: "Room 301",
-            schedule: "Mon/Wed 9:00 AM - 10:30 AM"
-        },
-        {
-            id: 102,
-            name: "Object-Oriented Programming",
-            code: "CSC 211",
-            professor: "Dr. Wilson",
-            finalGrade: "A-",
-            credits: 3,
-            location: "Room 405",
-            schedule: "Tue/Thu 11:00 AM - 12:30 PM"
-        }
-    ],
-    'Fall 2023': [
-        {
-            id: 103,
-            name: "Discrete Mathematics",
-            code: "CSC 104",
-            professor: "Dr. Martinez",
-            finalGrade: "B+",
-            credits: 4,
-            location: "Room 204",
-            schedule: "Mon/Wed 2:00 PM - 3:30 PM"
-        },
-        {
-            id: 104,
-            name: "Introduction to Programming",
-            code: "CSC 102",
-            professor: "Dr. Thompson",
-            finalGrade: "A",
-            credits: 3,
-            location: "Room 401",
-            schedule: "Tue/Thu 3:00 PM - 4:30 PM"
-        }
-    ]
-};
-
 export default function StudentCoursesPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -134,8 +67,8 @@ export default function StudentCoursesPage() {
   });
 
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
-  const [enrolledCourses, setEnrolledCourses] = useState<typeof availableCourses>([]);
-  const [availableCourses, setAvailableCourses] = useState<typeof availableCourses>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const fetchCourses = async (params: URLSearchParams) => {
@@ -187,7 +120,7 @@ export default function StudentCoursesPage() {
     fetchEnrolledCourses();
   }, []);
 
-  const handleEnroll = async (course: typeof availableCourses[0]) => {
+  const handleEnroll = async (course: Course) => {
     try {
       const response = await fetch('/api/student/enroll', {
         method: 'POST',
@@ -215,8 +148,8 @@ export default function StudentCoursesPage() {
 
       // Update local state only after successful enrollment
       setEnrolledCourses([...enrolledCourses, course]);
-      setAvailableCourses(prevCourses => 
-        prevCourses.map(c => 
+      setAvailableCourses((prevCourses: Course[]) => 
+        prevCourses.map((c: Course) => 
           c.id === course.id ? { ...c, enrolled: c.enrolled + 1 } : c
         )
       );
@@ -249,9 +182,9 @@ export default function StudentCoursesPage() {
       }
 
       // Update local state only after successful unenrollment
-      setEnrolledCourses(enrolledCourses.filter((course: typeof availableCourses[0]) => course.id !== courseId));
-      setAvailableCourses(prevCourses => 
-        prevCourses.map((c: typeof availableCourses[0]) => 
+      setEnrolledCourses(enrolledCourses.filter((course: Course) => course.id !== courseId));
+      setAvailableCourses((prevCourses: Course[]) => 
+        prevCourses.map((c: Course) => 
           c.id === courseId ? { ...c, enrolled: c.enrolled - 1 } : c
         )
       );
@@ -267,7 +200,7 @@ export default function StudentCoursesPage() {
   };
 
   const isEnrolled = (courseId: number) => {
-    return enrolledCourses.some((course: typeof availableCourses[0]) => course.id === courseId);
+    return enrolledCourses.some((course: Course) => course.id === courseId);
   };
 
   return (
@@ -366,7 +299,7 @@ export default function StudentCoursesPage() {
 
           {/* Course Grid */}
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableCourses.map((course: typeof availableCourses[0], index: number) => (
+            {availableCourses.map((course: Course, index: number) => (
                 <motion.div
                     key={course.id}
                     initial={{ opacity: 0, y: 20 }}
