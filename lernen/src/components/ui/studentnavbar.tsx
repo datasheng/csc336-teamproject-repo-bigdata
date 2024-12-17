@@ -13,13 +13,20 @@ import {
     ScrollText,
     Star,
     LogOut,
-    Settings
+    Settings,
+    Crown
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { motion } from "framer-motion";
 
 interface NavbarProps {
     onCollapse?: (collapsed: boolean) => void;
+}
+
+interface UserDetails {
+    username: string;
+    email: string;
+    userpremiumstatus: boolean;
 }
 
 // temp type for nav items
@@ -36,7 +43,35 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
-    const [userDetails, setUserDetails] = useState<{ username: string; email: string } | null>(null);
+    const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+
+    const StatusBadge = ({ isPremium }: { isPremium: boolean }) => {
+        if (isPremium) {
+            return (
+                <motion.div
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    whileHover={{ scale: 1.1 }}
+                    className="flex items-center space-x-1 bg-yellow-500/20 px-2 py-0.5 rounded-full"
+                >
+                    <Crown className="h-3 w-3 text-yellow-500" />
+                    <span className="text-xs text-yellow-500 font-medium">Premium</span>
+                </motion.div>
+            );
+        }
+
+        return (
+            <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                whileHover={{ scale: 1.1 }}
+                className="flex items-center space-x-1 bg-gray-500/20 px-2 py-0.5 rounded-full"
+            >
+                <span className="text-xs text-gray-400 font-medium">Free</span>
+            </motion.div>
+        );
+    };
+
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -123,9 +158,7 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
 
     return (
         <div className="relative">
-            <div
-                className={`fixed left-0 top-0 flex h-screen flex-col border-r border-gray-800 bg-white/[0.02] transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}
-            >
+            <div className={`fixed left-0 top-0 flex h-screen flex-col border-r border-gray-800 bg-white/[0.02] transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
                 {/* Logo Section */}
                 <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'px-4'} py-4`}>
                     {!isCollapsed && (
@@ -218,18 +251,29 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                     <div className="border-t border-gray-800 p-4">
                         <div className="flex items-center space-x-3">
                             <motion.div
-                                className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0"
+                                className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${userDetails?.userpremiumstatus
+                                    ? 'bg-yellow-500/20'
+                                    : 'bg-gray-500/20'
+                                    }`}
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
                             >
-                                <span className="text-blue-400 text-xl font-bold">
+                                <span className={`text-xl font-bold ${userDetails?.userpremiumstatus
+                                    ? 'text-yellow-500'
+                                    : 'text-blue-400'
+                                    }`}>
                                     {userDetails?.username?.[0] || '?'}
                                 </span>
                             </motion.div>
                             <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white">
-                                    {userDetails?.username || 'Loading...'}
-                                </span>
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-sm font-medium text-white">
+                                        {userDetails?.username || 'Loading...'}
+                                    </span>
+                                    {userDetails && (
+                                        <StatusBadge isPremium={userDetails.userpremiumstatus} />
+                                    )}
+                                </div>
                                 <span className="text-xs text-gray-400">
                                     {userDetails?.email || 'Loading...'}
                                 </span>
@@ -239,10 +283,31 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                 )}
                 {isCollapsed && (
                     <div className="border-t border-gray-800 p-4 flex justify-center">
-                        <div className="h-8 w-8 rounded-full bg-gray-800 group relative flex items-center justify-center">
-                            <span className="text-blue-400 text-sm font-bold">
-                                {userDetails?.username?.[0] || '?'}
-                            </span>
+                        <div className="relative h-8 w-8 rounded-full group flex items-center justify-center">
+                            <motion.div
+                                className={`h-full w-full rounded-full flex items-center justify-center ${userDetails?.userpremiumstatus
+                                    ? 'bg-yellow-500/20'
+                                    : 'bg-blue-500/20'
+                                    }`}
+                                whileHover={{ scale: 1.1 }}
+                            >
+                                <span className={`text-sm font-bold ${userDetails?.userpremiumstatus
+                                    ? 'text-yellow-500'
+                                    : 'text-blue-400'
+                                    }`}>
+                                    {userDetails?.username?.[0] || '?'}
+                                </span>
+                            </motion.div>
+                            {userDetails?.userpremiumstatus && (
+                                <div className="absolute -top-1 -right-1">
+                                    <Crown className="h-3 w-3 text-yellow-500" />
+                                </div>
+                            )}
+
+                            {/* Tooltip showing status on hover */}
+                            <div className="absolute left-full ml-2 hidden rounded-md bg-gray-800 px-2 py-1 text-xs text-white group-hover:block z-50">
+                                {userDetails?.userpremiumstatus ? 'Premium User' : 'Free User'}
+                            </div>
                         </div>
                     </div>
                 )}
