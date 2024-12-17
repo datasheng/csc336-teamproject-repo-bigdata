@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
 import { Search, Users, Clock, MapPin, Plus, Check } from "lucide-react";
 import StudentNavbar from "@/components/ui/studentnavbar";
@@ -120,40 +120,55 @@ const previouslyEnrolledCourses = {
 };
 
 export default function StudentCoursesPage() {
-  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
-  const [enrolledCourses, setEnrolledCourses] = useState<typeof availableCourses>([]);
-  
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Get search params with defaults
-  const currentTerm = searchParams.get("term") || "Fall 2024";
-  const currentDepartment = searchParams.get("department") || "All";
-  const currentCredits = searchParams.get("credits") || "";
-  const searchQuery = searchParams.get("q") || "";
+  // Initialize state from URL parameters
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') || "");
+  const [filters, setFilters] = useState({
+    showOpenOnly: searchParams.get('openOnly') === 'true',
+    term: searchParams.get('term') || "Fall 2024",
+    department: searchParams.get('department') || "All",
+    credits: searchParams.get('credits') || "",
+  });
 
-  const [searchInput, setSearchInput] = useState(searchQuery);
-  const [showOpenOnly, setShowOpenOnly] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+  const [enrolledCourses, setEnrolledCourses] = useState<typeof availableCourses>([]);
+  const [availableCourses, setAvailableCourses] = useState<typeof availableCourses>([]);
 
-  const [termFilter, setTermFilter] = useState(currentTerm);
-  const [departmentFilter, setDepartmentFilter] = useState(currentDepartment);
-  const [creditsFilter, setCreditsFilter] = useState(currentCredits);
-
-  const createQueryString = (params: Record<string, string>) => {
-    const current = new URLSearchParams(Array.from(searchParams.entries()));
-    
-    // Update or delete params
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === null || value === "") {
-        current.delete(key);
-      } else {
-        current.set(key, value);
-      }
-    });
-
-    return current.toString();
+  const fetchCourses = async (params: URLSearchParams) => {
+    try {
+      const response = await fetch(`/api/courses?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch courses');
+      
+      const data = await response.json();
+      setAvailableCourses(data);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
   };
+
+  // Handle search and filter updates
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    
+    if (searchInput) params.set('q', searchInput);
+    if (filters.term) params.set('term', filters.term);
+    if (filters.department !== 'All') params.set('department', filters.department);
+    if (filters.credits) params.set('credits', filters.credits);
+    if (filters.showOpenOnly) params.set('openOnly', 'true');
+
+    // Update URL and fetch courses
+    router.push(`${pathname}?${params.toString()}`);
+    fetchCourses(params);
+  };
+
+  // Initial load using URL parameters
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    fetchCourses(params);
+  }, [searchParams]);
 
   const handleEnroll = (course: typeof availableCourses[0]) => {
     if (!enrolledCourses.find(c => c.id === course.id)) {
@@ -170,8 +185,8 @@ export default function StudentCoursesPage() {
   };
 
   const handleUnenroll = (courseId: number) => {
-    setEnrolledCourses(enrolledCourses.filter(course => course.id !== courseId));
-    const updatedCourses = availableCourses.map(c => 
+    setEnrolledCourses(enrolledCourses.filter((course: typeof availableCourses[0]) => course.id !== courseId));
+    const updatedCourses = availableCourses.map((c: typeof availableCourses[0]) => 
         c.id === courseId ? { ...c, enrolled: c.enrolled - 1 } : c
     );
     availableCourses.splice(0, availableCourses.length, ...updatedCourses);
@@ -182,18 +197,7 @@ export default function StudentCoursesPage() {
   };
 
   const isEnrolled = (courseId: number) => {
-    return enrolledCourses.some(course => course.id === courseId);
-  };
-
-  const handleSearch = () => {
-    router.push(
-      `${pathname}?${createQueryString({
-        q: searchInput,
-        term: termFilter,
-        department: departmentFilter,
-        credits: creditsFilter,
-      })}`
-    );
+    return enrolledCourses.some((course: typeof availableCourses[0]) => course.id === courseId);
   };
 
   return (
@@ -238,8 +242,8 @@ export default function StudentCoursesPage() {
             {/* Filters Section */}
             <div className="w-full max-w-3xl mt-6 flex flex-wrap items-center gap-4">
               <Select
-                value={termFilter}
-                onValueChange={setTermFilter}
+                value={filters.term}
+                onValueChange={(value) => setFilters(prev => ({ ...prev, term: value }))}
               >
                 <SelectTrigger className="w-[180px] bg-black border-gray-800">
                   <SelectValue placeholder="Select term" />
@@ -251,8 +255,8 @@ export default function StudentCoursesPage() {
               </Select>
 
               <Select
-                value={departmentFilter}
-                onValueChange={setDepartmentFilter}
+                value={filters.department}
+                onValueChange={(value) => setFilters(prev => ({ ...prev, department: value }))}
               >
                 <SelectTrigger className="w-[180px] bg-black border-gray-800">
                   <SelectValue placeholder="Select department" />
@@ -270,16 +274,16 @@ export default function StudentCoursesPage() {
                 type="number"
                 placeholder="Credits"
                 className="w-[120px] px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                value={creditsFilter}
-                onChange={(e) => setCreditsFilter(e.target.value)}
+                value={filters.credits}
+                onChange={(e) => setFilters(prev => ({ ...prev, credits: e.target.value }))}
                 min="1"
                 max="4"
               />
 
               <div className="flex items-center gap-2">
                 <Switch
-                  checked={showOpenOnly}
-                  onCheckedChange={setShowOpenOnly}
+                  checked={filters.showOpenOnly}
+                  onCheckedChange={(checked) => setFilters(prev => ({ ...prev, showOpenOnly: checked }))}
                   className="data-[state=checked]:bg-blue-500"
                 />
                 <label className="text-sm text-gray-400">
@@ -291,7 +295,7 @@ export default function StudentCoursesPage() {
 
           {/* Course Grid */}
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableCourses.map((course, index) => (
+            {availableCourses.map((course: typeof availableCourses[0], index: number) => (
                 <motion.div
                     key={course.id}
                     initial={{ opacity: 0, y: 20 }}
