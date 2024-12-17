@@ -217,7 +217,7 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                 {!isCollapsed && (
                     <div className="border-t border-gray-800 p-4">
                         <div className="flex items-center space-x-3">
-                            <motion.div 
+                            <motion.div
                                 className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0"
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -239,15 +239,15 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                 )}
                 {isCollapsed && (
                     <div className="border-t border-gray-800 p-4 flex justify-center">
-                        <div className="h-8 w-8 rounded-full bg-gray-800 group relative">
-                            <div className="absolute left-full ml-2 hidden rounded-md bg-gray-800 px-2 py-1 text-xs text-white group-hover:block whitespace-nowrap">
-                                {userDetails?.username || 'Loading...'}
-                            </div>
+                        <div className="h-8 w-8 rounded-full bg-gray-800 group relative flex items-center justify-center">
+                            <span className="text-blue-400 text-sm font-bold">
+                                {userDetails?.username?.[0] || '?'}
+                            </span>
                         </div>
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 
