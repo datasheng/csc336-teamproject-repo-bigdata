@@ -128,7 +128,7 @@ export default function StudentCoursesPage() {
   const [searchInput, setSearchInput] = useState(searchParams.get('q') || "");
   const [filters, setFilters] = useState({
     showOpenOnly: searchParams.get('openOnly') === 'true',
-    term: searchParams.get('term') || "Fall 2024",
+    term: searchParams.get('term') || "All",
     department: searchParams.get('department') || "All",
     credits: searchParams.get('credits') || "",
   });
@@ -155,7 +155,7 @@ export default function StudentCoursesPage() {
     const params = new URLSearchParams();
     
     if (searchInput) params.set('q', searchInput);
-    if (filters.term) params.set('term', filters.term);
+    if (filters.term !== "All") params.set('term', filters.term);
     if (filters.department !== 'All') params.set('department', filters.department);
     if (filters.credits) params.set('credits', filters.credits);
     if (filters.showOpenOnly) params.set('openOnly', 'true');
@@ -319,6 +319,7 @@ export default function StudentCoursesPage() {
                   <SelectValue placeholder="Select term" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="All">All Terms</SelectItem>
                   <SelectItem value="Fall 2024">Fall 2024</SelectItem>
                   <SelectItem value="Spring 2024">Spring 2024</SelectItem>
                 </SelectContent>
