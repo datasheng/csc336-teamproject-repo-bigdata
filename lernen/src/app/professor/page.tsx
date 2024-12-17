@@ -1,145 +1,185 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
-import { Search, ChevronDown } from "lucide-react";
-import Navbar from '@/components/ui/navbar';
-import Chatbot from "@/components/ui/chatbot"
+import { BookOpen, Users, Clock, MapPin } from "lucide-react";
+import Navbar from "@/components/ui/navbar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import BlurFade from "@/components/ui/blur-fade";
+import ClassContainer from "@/components/ui/classcontainer";
+
+interface ProfessorData {
+  firstName: string;
+  lastName: string;
+  department: string;
+  avgRating: number;
+  courses: Course[];
+}
+
+interface Course {
+  courseID: string;
+  courseCode: string;
+  coursePrefix: string;
+  courseTitle: string;
+  seatsTaken: number;
+  capacity: number;
+  credits: number;
+}
 
 export default function ProfessorDashboard() {
-  const [selectedClass, setSelectedClass] = useState("");
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+  const [selectedSemester, setSelectedSemester] = useState("Fall 2024");
+  const [professorData, setProfessorData] = useState<ProfessorData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Remove once backend once implemented
-  const classes = [
-    { id: "CS101", name: "Introduction to Computer Science", semester: "Fall 2024" },
-    { id: "CS201", name: "Data Structures", semester: "Fall 2024" },
-    { id: "CS301", name: "Algorithms", semester: "Fall 2024" }
-  ];
-
-  const students = [
-    {
-      id: "23456789",
-      name: "John Smith",
-      email: "john.smith@email.com",
-      altEmail: "johnsmith@gmail.com",
-      status: "Enrolled",
-      imgUrl: "/api/placeholder/32/32"
-    },
-    {
-      id: "23456790",
-      name: "Jane Doe",
-      email: "jane.doe@email.com",
-      altEmail: "janedoe@gmail.com",
-      status: "Not Enrolled",
-      imgUrl: "/api/placeholder/32/32"
-    },
-    {
-      id: "23456791",
-      name: "Alice Johnson",
-      email: "alice.j@email.com",
-      altEmail: "alicej@gmail.com",
-      status: "Enrolled",
-      imgUrl: "/api/placeholder/32/32"
+  useEffect(() => {
+    async function fetchProfessorData() {
+      try {
+        const response = await fetch("/api/professor");
+        const data = await response.json();
+        setProfessorData(data);
+      } catch (error) {
+        console.error("Error fetching professor data:", error);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
+
+    fetchProfessorData();
+  }, []);
+
+  // Calculate statistics with better handling of empty data
+  const totalStudents = professorData?.courses?.reduce(
+    (sum, course) => sum + course.seatsTaken,
+    0
+  ) || 0;
+
+  const totalCourses = professorData?.courses?.length || 0;
+
+  const totalCapacity = professorData?.courses?.reduce(
+    (sum, course) => sum + course.capacity,
+    0
+  ) || 0;
+
+  const capacityPercentage = totalCapacity > 0 
+    ? ((totalStudents / totalCapacity) * 100).toFixed(1) 
+    : "0";
+
+  // Transform courses data for ClassContainer
+  const formattedCourses = professorData?.courses?.map(course => ({
+    id: course.courseID,
+    name: course.courseTitle,
+    code: `${course.coursePrefix} ${course.courseCode}`,
+    professor: `${professorData.firstName} ${professorData.lastName}`,
+    schedule: "Schedule TBD", // Add this to your course data if needed
+    room: "Room TBD", // Add this to your course data if needed
+    credits: course.credits
+  })) || [];
 
   return (
     <div className="flex h-screen bg-black overflow-hidden">
       <Navbar onCollapse={setIsNavCollapsed} />
 
-      <main className={`flex-1 transition-all duration-300 ${isNavCollapsed ? 'ml-16' : 'ml-64'}`}>
-        <div className="relative flex min-h-screen flex-col bg-black/[0.96] antialiased bg-grid-white/[0.02]">
+      <main className={`flex-1 transition-all duration-300 ${isNavCollapsed ? "ml-16" : "ml-64"}`}>
+        <div className="relative min-h-screen bg-black/[0.96] text-white p-8 overflow-y-auto">
           <Spotlight
             className="-top-40 right-0 md:right-60 md:-top-20"
             fill="#60A5FA"
           />
 
-          <div className="relative z-10 mx-auto w-full max-w-7xl space-y-6 p-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-blue-400">Course Dashboard</h1>
+          {/* Header Section */}
+          <div className="relative z-10 flex flex-col items-center mt-[12vh]">
+            <BlurFade delay={0.54} inView>
+              <h1 className="text-6xl font-bold tracking-[0.04em] bg-gradient-to-b from-blue-400/90 via-blue-400/70 to-blue-400/50 bg-clip-text text-transparent">
+                Welcome, {professorData?.firstName || "Professor"}!
+              </h1>
+            </BlurFade>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+            <Card className="bg-black/30 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-blue-400">Total Students</CardTitle>
+                <CardDescription>Across all courses</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold text-white">{totalStudents}</p>
+                <p className="text-sm text-gray-400">
+                  {capacityPercentage}% capacity filled
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/30 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-blue-400">Active Courses</CardTitle>
+                <CardDescription>Current semester</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold text-white">{totalCourses}</p>
+                <p className="text-sm text-gray-400">
+                  Teaching load: {totalCourses * 3} credits
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/30 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-blue-400">Rating</CardTitle>
+                <CardDescription>Overall performance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold text-white">{professorData?.avgRating?.toFixed(1) || "N/A"}</p>
+                <p className="text-sm text-gray-400">
+                  Based on student feedback
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+
+
+          {/* Semester Select */}
+          <div className="relative z-10 flex justify-center mt-8 mb-6">
+            <div className="w-full max-w-5xl px-4 flex justify-end">
+              <Select
+                value={selectedSemester}
+                onValueChange={setSelectedSemester}
+              >
+                <SelectTrigger className="w-[200px] text-gray-200">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-400" />
+                    <SelectValue placeholder="Select semester" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Fall 2024">Fall 2024</SelectItem>
+                  <SelectItem value="Spring 2024">Spring 2024</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
 
-            <div className="rounded-lg border border-gray-800 bg-black/50 p-6">
-              <div className="mb-6 relative">
-                <div className="relative w-full max-w-md">
-                  <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full appearance-none rounded-lg border border-gray-800 bg-black px-4 py-2 text-white focus:border-blue-500 focus:outline-none pr-10"
-                  >
-                    <option value="" disabled>Select a course</option>
-                    {classes.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.id} - {course.name} ({course.semester})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
-                </div>
-              </div>
-
-              <div className="mb-4 flex items-center space-x-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                  <input
-                    type="text"
-                    placeholder="Search students..."
-                    className="w-full rounded-lg border border-gray-800 bg-black px-4 py-2 pl-10 text-white focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-800 text-left text-sm">
-                      <th className="p-3 font-medium text-gray-400">Profile</th>
-                      <th className="p-3 font-medium text-gray-400">Name</th>
-                      <th className="p-3 font-medium text-gray-400">Student ID</th>
-                      <th className="p-3 font-medium text-gray-400">Email</th>
-                      <th className="p-3 font-medium text-gray-400">Alt. Email</th>
-                      <th className="p-3 font-medium text-gray-400">Status</th>
-                      <th className="p-3 font-medium text-gray-400">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((student) => (
-                      <tr key={student.id} className="border-b border-gray-800 hover:bg-gray-900/50">
-                        <td className="p-3">
-                          <img
-                            src={student.imgUrl}
-                            alt={`${student.name}'s profile`}
-                            className="h-8 w-8 rounded-full"
-                          />
-                        </td>
-                        <td className="p-3 font-medium">{student.name}</td>
-                        <td className="p-3 text-gray-300">{student.id}</td>
-                        <td className="p-3 text-gray-300">{student.email}</td>
-                        <td className="p-3 text-gray-300">{student.altEmail}</td>
-                        <td className="p-3">
-                          <span className={`rounded-full px-2 py-1 text-xs ${student.status === 'Enrolled'
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-red-500/20 text-red-400'
-                            }`}>
-                            {student.status}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <button className="rounded-md bg-transparent border border-gray-800 px-4 py-1.5 text-xs text-gray-300 transition-colors hover:bg-gray-800">
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          {/* Classes Container */}
+          <div className="relative z-10 flex justify-center">
+            <ClassContainer courses={formattedCourses} />
           </div>
         </div>
       </main>
-      <Chatbot />
     </div>
   );
 }
