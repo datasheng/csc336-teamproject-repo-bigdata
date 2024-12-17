@@ -12,7 +12,8 @@ import {
     ChevronRight,
     ScrollText,
     Star,
-    LogOut
+    LogOut,
+    Settings
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -89,6 +90,12 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
         {
             section: 'Account',
             items: [
+
+                {
+                    label: 'Settings',
+                    icon: Settings,
+                    href: '/student/settings'
+                },
                 {
                     label: 'Logout',
                     icon: LogOut,
@@ -146,11 +153,10 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                                         <Link
                                             key={item.label}
                                             href={item.href}
-                                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors relative group ${
-                                                isActive
-                                                    ? 'bg-blue-500/10 text-blue-400'
-                                                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                                            }`}
+                                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors relative group ${isActive
+                                                ? 'bg-blue-500/10 text-blue-400'
+                                                : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                                                }`}
                                         >
                                             <div className="flex items-center space-x-2">
                                                 <Icon className="h-4 w-4 flex-shrink-0" />
