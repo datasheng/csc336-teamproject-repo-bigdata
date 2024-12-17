@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -16,6 +16,7 @@ import {
     Settings
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { motion } from "framer-motion";
 
 interface NavbarProps {
     onCollapse?: (collapsed: boolean) => void;
@@ -35,6 +36,21 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
+    const [userDetails, setUserDetails] = useState<{ username: string; email: string } | null>(null);
+
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const response = await fetch('/api/user/details');
+                const data = await response.json();
+                setUserDetails(data);
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+            }
+        };
+
+        fetchUserDetails();
+    }, []);
 
     const handleCollapse = () => {
         const newCollapsedState = !isCollapsed;
@@ -201,10 +217,22 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                 {!isCollapsed && (
                     <div className="border-t border-gray-800 p-4">
                         <div className="flex items-center space-x-3">
-                            <div className="h-8 w-8 rounded-full bg-gray-800" />
+                            <motion.div 
+                                className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0"
+                                whileHover={{ scale: 1.1 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            >
+                                <span className="text-blue-400 text-xl font-bold">
+                                    {userDetails?.username?.[0] || '?'}
+                                </span>
+                            </motion.div>
                             <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white">Student Name</span>
-                                <span className="text-xs text-gray-400">student@lernen.com</span>
+                                <span className="text-sm font-medium text-white">
+                                    {userDetails?.username || 'Loading...'}
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                    {userDetails?.email || 'Loading...'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -213,7 +241,7 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                     <div className="border-t border-gray-800 p-4 flex justify-center">
                         <div className="h-8 w-8 rounded-full bg-gray-800 group relative">
                             <div className="absolute left-full ml-2 hidden rounded-md bg-gray-800 px-2 py-1 text-xs text-white group-hover:block whitespace-nowrap">
-                                Professor Name
+                                {userDetails?.username || 'Loading...'}
                             </div>
                         </div>
                     </div>
