@@ -136,6 +136,7 @@ export default function StudentCoursesPage() {
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<typeof availableCourses>([]);
   const [availableCourses, setAvailableCourses] = useState<typeof availableCourses>([]);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const fetchCourses = async (params: URLSearchParams) => {
     try {
@@ -170,30 +171,94 @@ export default function StudentCoursesPage() {
     fetchCourses(params);
   }, [searchParams]);
 
-  const handleEnroll = (course: typeof availableCourses[0]) => {
-    if (!enrolledCourses.find(c => c.id === course.id)) {
-        setEnrolledCourses([...enrolledCourses, course]);
-        const updatedCourses = availableCourses.map(c => 
-            c.id === course.id ? { ...c, enrolled: c.enrolled + 1 } : c
-        );
-        availableCourses.splice(0, availableCourses.length, ...updatedCourses);
+  useEffect(() => {
+    const fetchEnrolledCourses = async () => {
+      try {
+        const response = await fetch('/api/student/courses');
+        if (!response.ok) throw new Error('Failed to fetch enrolled courses');
         
-        toast.success(`Enrolled in ${course.name}`, {
-            icon: '📚',
-        });
+        const data = await response.json();
+        setEnrolledCourses(data.courses || []);
+      } catch (error) {
+        console.error('Error fetching enrolled courses:', error);
+      }
+    };
+
+    fetchEnrolledCourses();
+  }, []);
+
+  const handleEnroll = async (course: typeof availableCourses[0]) => {
+    try {
+      const response = await fetch('/api/student/enroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ courseId: course.id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.prerequisites) {
+          toast.error(`Missing prerequisites: ${data.prerequisites.join(', ')}`);
+        } else {
+          toast.error(data.error || 'Failed to enroll in course');
+        }
+        return;
+      }
+
+      // Update local state only after successful enrollment
+      setEnrolledCourses([...enrolledCourses, course]);
+      setAvailableCourses(prevCourses => 
+        prevCourses.map(c => 
+          c.id === course.id ? { ...c, enrolled: c.enrolled + 1 } : c
+        )
+      );
+      
+      toast.success(`Enrolled in ${course.name}`, {
+        icon: '📚',
+      });
+
+    } catch (error) {
+      console.error('Error enrolling in course:', error);
+      toast.error('Failed to enroll in course');
     }
   };
 
-  const handleUnenroll = (courseId: number) => {
-    setEnrolledCourses(enrolledCourses.filter((course: typeof availableCourses[0]) => course.id !== courseId));
-    const updatedCourses = availableCourses.map((c: typeof availableCourses[0]) => 
-        c.id === courseId ? { ...c, enrolled: c.enrolled - 1 } : c
-    );
-    availableCourses.splice(0, availableCourses.length, ...updatedCourses);
-    
-    toast('Successfully unenrolled', {
+  const handleUnenroll = async (courseId: number) => {
+    try {
+      const response = await fetch('/api/student/unenroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ courseId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || 'Failed to unenroll from course');
+        return;
+      }
+
+      // Update local state only after successful unenrollment
+      setEnrolledCourses(enrolledCourses.filter((course: typeof availableCourses[0]) => course.id !== courseId));
+      setAvailableCourses(prevCourses => 
+        prevCourses.map((c: typeof availableCourses[0]) => 
+          c.id === courseId ? { ...c, enrolled: c.enrolled - 1 } : c
+        )
+      );
+      
+      toast.success('Successfully unenrolled', {
         icon: '🔄',
-    });
+      });
+
+    } catch (error) {
+      console.error('Error unenrolling from course:', error);
+      toast.error('Failed to unenroll from course');
+    }
   };
 
   const isEnrolled = (courseId: number) => {
