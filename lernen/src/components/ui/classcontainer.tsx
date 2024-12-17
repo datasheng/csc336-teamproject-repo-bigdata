@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { GraduationCap, BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Course {
   id: number;
@@ -15,9 +16,15 @@ interface Course {
 
 interface ClassContainerProps {
   courses: Course[];
+  userType?: 'student' | 'professor';
+  onCreateCourse?: () => void;
 }
 
-const ClassContainer: React.FC<ClassContainerProps> = ({ courses }) => {
+const ClassContainer: React.FC<ClassContainerProps> = ({ 
+  courses, 
+  userType = 'student',
+  onCreateCourse 
+}) => {
   const totalCredits = courses.reduce((sum, course) => sum + course.credits, 0);
 
   return (
@@ -111,9 +118,19 @@ const ClassContainer: React.FC<ClassContainerProps> = ({ courses }) => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-8 text-gray-400 text-lg"
+              className="flex flex-col items-center justify-center py-8 space-y-4"
             >
-              No classes to show
+              {userType === 'professor' && (
+                <Button
+                  onClick={onCreateCourse}
+                  className="bg-blue-500 hover:bg-blue-600 mb-4"
+                >
+                  Create Course
+                </Button>
+              )}
+              <p className="text-center text-gray-400 text-lg">
+                No classes to show
+              </p>
             </motion.div>
           ) : (
             <motion.div

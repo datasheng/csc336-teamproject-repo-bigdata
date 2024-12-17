@@ -20,6 +20,10 @@ import {
 } from "@/components/ui/select";
 import BlurFade from "@/components/ui/blur-fade";
 import ClassContainer from "@/components/ui/classcontainer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
 
 interface ProfessorData {
   firstName: string;
@@ -39,11 +43,39 @@ interface Course {
   credits: number;
 }
 
+interface CourseFormData {
+  courseCode: string;
+  coursePrefix: string;
+  courseTitle: string;
+  capacity: number;
+  credits: number;
+  schedule: {
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    room: string;
+  }[];
+}
+
 export default function ProfessorDashboard() {
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState("Fall 2024");
   const [professorData, setProfessorData] = useState<ProfessorData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [formData, setFormData] = useState<CourseFormData>({
+    courseCode: "",
+    coursePrefix: "",
+    courseTitle: "",
+    capacity: 30,
+    credits: 3,
+    schedule: [{
+      dayOfWeek: "Monday",
+      startTime: "09:00",
+      endTime: "10:15",
+      room: ""
+    }]
+  });
 
   useEffect(() => {
     async function fetchProfessorData() {
@@ -88,6 +120,29 @@ export default function ProfessorDashboard() {
     room: "Room TBD", // Add this to your course data if needed
     credits: course.credits
   })) || [];
+
+  const handleCreateCourse = async () => {
+    try {
+      const response = await fetch('/api/professor/course', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Failed to create course');
+
+      const data = await response.json();
+      toast.success('Course created successfully');
+      setIsCreateDialogOpen(false);
+      // Refresh the course list
+      fetchProfessorData();
+    } catch (error) {
+      console.error('Error creating course:', error);
+      toast.error('Failed to create course');
+    }
+  };
 
   return (
     <div className="flex h-screen bg-black overflow-hidden">
@@ -143,7 +198,7 @@ export default function ProfessorDashboard() {
                 <CardDescription>Overall performance</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-4xl font-bold text-white">{professorData?.avgRating?.toFixed(1) || "N/A"}</p>
+                <p className="text-4xl font-bold text-white">{professorData?.avgRating?.toFixed(1) || "0.0"}</p>
                 <p className="text-sm text-gray-400">
                   Based on student feedback
                 </p>
@@ -176,8 +231,88 @@ export default function ProfessorDashboard() {
 
           {/* Classes Container */}
           <div className="relative z-10 flex justify-center">
-            <ClassContainer courses={formattedCourses} />
+            <ClassContainer 
+              courses={formattedCourses} 
+              userType="professor"
+              onCreateCourse={() => setIsCreateDialogOpen(true)}
+            />
           </div>
+
+          {/* Create Course Dialog */}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogContent className="bg-black border border-gray-800">
+              <DialogHeader>
+                <DialogTitle className="text-blue-400">Create New Course</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-400">Course Prefix</label>
+                    <Input
+                      value={formData.coursePrefix}
+                      onChange={(e) => setFormData({...formData, coursePrefix: e.target.value})}
+                      className="bg-black border-gray-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400">Course Code</label>
+                    <Input
+                      value={formData.courseCode}
+                      onChange={(e) => setFormData({...formData, courseCode: e.target.value})}
+                      className="bg-black border-gray-800"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-400">Course Title</label>
+                  <Input
+                    value={formData.courseTitle}
+                    onChange={(e) => setFormData({...formData, courseTitle: e.target.value})}
+                    className="bg-black border-gray-800"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-400">Capacity</label>
+                    <Input
+                      type="number"
+                      value={formData.capacity}
+                      onChange={(e) => setFormData({...formData, capacity: parseInt(e.target.value)})}
+                      className="bg-black border-gray-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400">Credits</label>
+                    <Input
+                      type="number"
+                      value={formData.credits}
+                      onChange={(e) => setFormData({...formData, credits: parseInt(e.target.value)})}
+                      className="bg-black border-gray-800"
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsCreateDialogOpen(false)}
+                    className="border-gray-800"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCreateCourse}
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    Create Course
+                  </Button>
+                </DialogFooter>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
     </div>
