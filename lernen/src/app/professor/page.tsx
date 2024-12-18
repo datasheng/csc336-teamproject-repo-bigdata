@@ -221,6 +221,59 @@ export default function ProfessorDashboard() {
     });
   };
 
+  const handleEditCourse = async (courseId: string, formData: any) => {
+    try {
+      const response = await fetch(`/api/professor/course/${courseId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseCode: formData.courseCode,
+          coursePrefix: formData.coursePrefix,
+          courseTitle: formData.courseTitle,
+          capacity: formData.capacity,
+          credits: formData.credits,
+          schedule: formData.schedule.map((slot: any) => ({
+            day_of_week: slot.dayOfWeek,
+            start_time: slot.startTime,
+            end_time: slot.endTime,
+            room: slot.room
+          })),
+          semester: selectedSemester
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update course');
+      }
+
+      toast.success('Course updated successfully');
+      fetchProfessorData(); // Refresh the course list
+    } catch (error) {
+      console.error('Error updating course:', error);
+      toast.error('Failed to update course');
+    }
+  };
+
+  const handleDeleteCourse = async (courseId: string) => {
+    try {
+      const response = await fetch(`/api/professor/course/${courseId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete course');
+      }
+
+      toast.success('Course deleted successfully');
+      fetchProfessorData(); // Refresh the course list
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      toast.error('Failed to delete course');
+    }
+  };
+
   return (
     <div className="flex h-screen bg-black overflow-hidden">
       <Navbar onCollapse={setIsNavCollapsed} />
@@ -333,6 +386,8 @@ export default function ProfessorDashboard() {
                 courses={professorData?.courses || []}
                 userType="professor"
                 onCreateCourse={() => setIsCreateDialogOpen(true)}
+                onEditCourse={handleEditCourse}
+                onDeleteCourse={handleDeleteCourse}
               />
             </div>
           )}
