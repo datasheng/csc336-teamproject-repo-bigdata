@@ -34,12 +34,15 @@ interface Course {
   schedule: string;
   room: string;
   credits: number;
+  seatsTaken: number;
+  capacity: number;
 }
 
 interface ProfessorData {
   firstName: string;
   lastName: string;
   department: string;
+  avgRating: number;
   courses: Course[];
 }
 
@@ -134,10 +137,10 @@ export default function ProfessorDashboard() {
     : "0";
 
   const validateSchedule = (schedule: CourseFormData['schedule']) => {
-    return schedule.every(slot => 
-      slot.dayOfWeek && 
-      slot.startTime && 
-      slot.endTime && 
+    return schedule.every(slot =>
+      slot.dayOfWeek &&
+      slot.startTime &&
+      slot.endTime &&
       slot.room
     );
   };
@@ -326,7 +329,7 @@ export default function ProfessorDashboard() {
             </div>
           ) : (
             <div className="relative z-10 flex justify-center">
-              <ClassContainer 
+              <ClassContainer
                 courses={professorData?.courses || []}
                 userType="professor"
                 onCreateCourse={() => setIsCreateDialogOpen(true)}
