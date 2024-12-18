@@ -6,13 +6,26 @@ import { MessageCircle, Send, Bot, User, X, Minimize2 } from 'lucide-react';
 interface Message {
     type: 'user' | 'assistant';
     content: string;
+    category?: 'general' | 'course' | 'help';
 }
+
+const systemContext = `You are an AI assistant for a learning management system called Lernen. 
+Your primary functions include:
+- Helping students with course-related queries
+- Providing study tips and learning strategies
+- Explaining concepts from their courses
+- Assisting with technical issues on the platform
+- Offering academic guidance
+
+Keep responses concise, friendly, and focused on education. If you don't have specific information 
+about a course or professor, you can provide general academic advice instead.;`
 
 const Chatbot: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {

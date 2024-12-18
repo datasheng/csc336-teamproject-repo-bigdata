@@ -29,8 +29,6 @@ interface UserDetails {
     userpremiumstatus: boolean;
 }
 
-// temp type for nav items
-// logout here is temp as well, i'll make this nicer later.
 type NavItem = {
     label: string;
     icon: any;

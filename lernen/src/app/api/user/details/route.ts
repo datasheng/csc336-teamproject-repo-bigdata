@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 interface UserDetails {
   username: string;
   email: string;
-  userpremiumstatus: boolean;
+  userPremiumStatus: boolean;
 }
 
 export async function GET() {
