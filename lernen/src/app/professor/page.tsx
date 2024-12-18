@@ -118,8 +118,8 @@ export default function ProfessorDashboard() {
     0
   ) || 0;
 
-  const capacityPercentage = totalCapacity > 0 
-    ? ((totalStudents / totalCapacity) * 100).toFixed(1) 
+  const capacityPercentage = totalCapacity > 0
+    ? ((totalStudents / totalCapacity) * 100).toFixed(1)
     : "0";
 
   // Transform courses data for ClassContainer
@@ -137,7 +137,7 @@ export default function ProfessorDashboard() {
     if (e) {
       e.preventDefault();
     }
-    
+
     try {
       const response = await fetch('/api/professor/course', {
         method: 'POST',
@@ -266,8 +266,8 @@ export default function ProfessorDashboard() {
 
           {/* Classes Container */}
           <div className="relative z-10 flex justify-center">
-            <ClassContainer 
-              courses={formattedCourses} 
+            <ClassContainer
+              courses={formattedCourses}
               userType="professor"
               onCreateCourse={() => setIsCreateDialogOpen(true)}
             />
