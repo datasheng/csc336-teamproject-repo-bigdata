@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Spotlight } from "@/components/ui/spotlight";
 import { Button } from "@/components/ui/button";
 import { CreditCard } from 'lucide-react';
@@ -13,16 +13,64 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import Navbar from "@/components/ui/studentnavbar";
+import toast from "react-hot-toast";
+import { createClient } from '@/utils/supabase/client';
+
+interface UserDetails {
+    username: string;
+    email: string;
+    userpremiumstatus: boolean;
+}
 
 export default function SettingsPage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('subscription');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+    const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+    const supabase = createClient();
 
-    const handleCancelSubscription = () => {
+    useEffect(() => {
+        fetchUserDetails();
+    }, []);
 
-        setIsDialogOpen(false);
+    const fetchUserDetails = async () => {
+        try {
+            const response = await fetch('/api/user/details');
+            const data = await response.json();
+            setUserDetails(data);
+        } catch (error) {
+            console.error('Error fetching user details:', error);
+        }
+    };
+
+    const handleCancelSubscription = async () => {
+        if (!userDetails?.userpremiumstatus) {
+            toast.error("You are not currently a premium member");
+            setIsDialogOpen(false);
+            return;
+        }
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) throw new Error('No user found');
+
+            const { error } = await supabase
+                .from('user')
+                .update({ userPremiumStatus: false })
+                .eq('userID', user.id);
+
+            if (error) throw error;
+
+            toast.success("Successfully cancelled premium subscription");
+            setUserDetails(prev => prev ? { ...prev, userpremiumstatus: false } : null);
+            setIsDialogOpen(false);
+
+        } catch (error) {
+            console.error('Error cancelling subscription:', error);
+            toast.error("Failed to cancel subscription");
+        }
     };
 
     return (
@@ -63,7 +111,11 @@ export default function SettingsPage() {
                                 {/* Subscription Card */}
                                 <div className="p-6 rounded-lg border border-gray-800 bg-black/50">
                                     <h2 className="text-xl font-semibold text-blue-400 mb-2">Subscription Management</h2>
-                                    <p className="text-gray-400 mb-6">Manage your current subscription plan and billing</p>
+                                    <p className="text-gray-400 mb-6">
+                                        {userDetails?.userpremiumstatus
+                                            ? "You are currently a premium member"
+                                            : "You are currently using a free account"}
+                                    </p>
                                     <Button
                                         className="w-full bg-red-500 text-white hover:bg-blue-400"
                                         onClick={() => setIsDialogOpen(true)}
