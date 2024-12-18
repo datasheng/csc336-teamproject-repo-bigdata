@@ -19,10 +19,7 @@ export async function GET(request: Request) {
         p_semester: semester
       });
 
-    console.log("Professor Data:", professorData);
-
     if (professorError) {
-      console.error('RPC Error:', professorError);
       return NextResponse.json({ error: professorError.message }, { status: 500 });
     }
 
@@ -47,11 +44,9 @@ export async function GET(request: Request) {
         : []
     };
 
-    console.log("Transformed Data:", transformedData);
     return NextResponse.json(transformedData);
 
   } catch (error) {
-    console.error('Server Error:', error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

@@ -98,10 +98,8 @@ export default function ProfessorDashboard() {
         throw new Error(data.error || 'Failed to fetch professor data');
       }
 
-      console.log("Fetched Data:", data);
       setProfessorData(data);
     } catch (error) {
-      console.error("Error fetching professor data:", error);
       setError(error instanceof Error ? error.message : 'Failed to load professor data');
       toast.error("Failed to load professor data");
     } finally {
