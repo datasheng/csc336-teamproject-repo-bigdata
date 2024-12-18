@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/select";
 import BlurFade from "@/components/ui/blur-fade";
 import ClassContainer from "@/components/ui/classcontainer";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
@@ -77,17 +76,8 @@ export default function ProfessorDashboard() {
       room: ""
     }]
   });
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newCourse, setNewCourse] = useState({
-    name: "",
-    code: "",
-    startTime: "",
-    endTime: "",
-    location: "",
-    dayOfWeek: "Monday"
-  });
 
-  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   const fetchProfessorData = async () => {
     try {
@@ -105,7 +95,6 @@ export default function ProfessorDashboard() {
     fetchProfessorData();
   }, []);
 
-  // Calculate statistics with better handling of empty data
   const totalStudents = professorData?.courses?.reduce(
     (sum, course) => sum + course.seatsTaken,
     0
@@ -118,18 +107,17 @@ export default function ProfessorDashboard() {
     0
   ) || 0;
 
-  const capacityPercentage = totalCapacity > 0 
-    ? ((totalStudents / totalCapacity) * 100).toFixed(1) 
+  const capacityPercentage = totalCapacity > 0
+    ? ((totalStudents / totalCapacity) * 100).toFixed(1)
     : "0";
 
-  // Transform courses data for ClassContainer
   const formattedCourses = professorData?.courses?.map(course => ({
     id: course.courseID,
     name: course.courseTitle,
     code: `${course.coursePrefix} ${course.courseCode}`,
     professor: `${professorData.firstName} ${professorData.lastName}`,
-    schedule: "Schedule TBD", // Add this to your course data if needed
-    room: "Room TBD", // Add this to your course data if needed
+    schedule: "Schedule TBD",
+    room: "Room TBD",
     credits: course.credits
   })) || [];
 
@@ -137,27 +125,55 @@ export default function ProfessorDashboard() {
     if (e) {
       e.preventDefault();
     }
-    
+
     try {
-      const response = await fetch('/api/professor/course', {
+      const response = await fetch('/api/professor/createcourse', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          courseCode: formData.courseCode,
+          coursePrefix: formData.coursePrefix,
+          courseTitle: formData.courseTitle,
+          capacity: formData.capacity,
+          credits: formData.credits,
+          schedule: formData.schedule.map(slot => ({
+            dayOfWeek: slot.dayOfWeek,
+            startTime: `${slot.startTime}:00`,
+            endTime: `${slot.endTime}:00`,
+            room: slot.room
+          }))
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to create course');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create course');
+      }
 
       const data = await response.json();
       toast.success('Course created successfully');
       setIsCreateDialogOpen(false);
-      setIsDialogOpen(false); // Close both dialogs
-      // Refresh the course list
+
+      setFormData({
+        courseCode: "",
+        coursePrefix: "",
+        courseTitle: "",
+        capacity: 30,
+        credits: 3,
+        schedule: [{
+          dayOfWeek: "Monday",
+          startTime: "09:00",
+          endTime: "10:15",
+          room: ""
+        }]
+      });
+
       fetchProfessorData();
     } catch (error) {
       console.error('Error creating course:', error);
-      toast.error('Failed to create course');
+      toast.error(error instanceof Error ? error.message : 'Failed to create course');
     }
   };
 
@@ -172,7 +188,6 @@ export default function ProfessorDashboard() {
             fill="#60A5FA"
           />
 
-          {/* Header Section */}
           <div className="relative z-10 flex flex-col items-center mt-[12vh]">
             <BlurFade delay={0.54} inView>
               <h1 className="text-6xl font-bold tracking-[0.04em] bg-gradient-to-b from-blue-400/90 via-blue-400/70 to-blue-400/50 bg-clip-text text-transparent">
@@ -181,7 +196,6 @@ export default function ProfessorDashboard() {
             </BlurFade>
           </div>
 
-          {/* Stats Cards */}
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -241,9 +255,6 @@ export default function ProfessorDashboard() {
             </motion.div>
           </div>
 
-
-
-          {/* Semester Select */}
           <div className="relative z-10 flex justify-center mt-8 mb-6">
             <div className="w-full max-w-5xl px-4 flex justify-end">
               <Select
@@ -264,18 +275,16 @@ export default function ProfessorDashboard() {
             </div>
           </div>
 
-          {/* Classes Container */}
           <div className="relative z-10 flex justify-center">
-            <ClassContainer 
-              courses={formattedCourses} 
+            <ClassContainer
+              courses={formattedCourses}
               userType="professor"
               onCreateCourse={() => setIsCreateDialogOpen(true)}
             />
           </div>
 
-          {/* Create Course Dialog */}
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent className="bg-black/90 border border-gray-800 text-white">
+            <DialogContent className="bg-black/90 border border-gray-800 text-white max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-blue-400">Create New Course</DialogTitle>
                 <DialogDescription className="text-gray-400">
@@ -361,6 +370,109 @@ export default function ProfessorDashboard() {
                   </div>
                 </div>
 
+                <div className="space-y-4">
+                  <label className="text-sm text-gray-400">Course Schedule</label>
+                  {formData.schedule.map((scheduleItem, index) => (
+                    <div key={index} className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Select
+                          value={scheduleItem.dayOfWeek}
+                          onValueChange={(value) => {
+                            const newSchedule = [...formData.schedule];
+                            newSchedule[index] = { ...scheduleItem, dayOfWeek: value };
+                            setFormData({ ...formData, schedule: newSchedule });
+                          }}
+                        >
+                          <SelectTrigger className="bg-black border-gray-800">
+                            <SelectValue placeholder="Select day" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {daysOfWeek.map((day) => (
+                              <SelectItem key={day} value={day}>
+                                {day}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                          <input
+                            type="text"
+                            required
+                            placeholder="Room number"
+                            className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                            value={scheduleItem.room}
+                            onChange={(e) => {
+                              const newSchedule = [...formData.schedule];
+                              newSchedule[index] = { ...scheduleItem, room: e.target.value };
+                              setFormData({ ...formData, schedule: newSchedule });
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                          <input
+                            type="time"
+                            required
+                            className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                            value={scheduleItem.startTime}
+                            onChange={(e) => {
+                              const newSchedule = [...formData.schedule];
+                              newSchedule[index] = { ...scheduleItem, startTime: e.target.value };
+                              setFormData({ ...formData, schedule: newSchedule });
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                          <input
+                            type="time"
+                            required
+                            className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                            value={scheduleItem.endTime}
+                            onChange={(e) => {
+                              const newSchedule = [...formData.schedule];
+                              newSchedule[index] = { ...scheduleItem, endTime: e.target.value };
+                              setFormData({ ...formData, schedule: newSchedule });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        schedule: [
+                          ...formData.schedule,
+                          {
+                            dayOfWeek: "Monday",
+                            startTime: "09:00",
+                            endTime: "10:15",
+                            room: ""
+                          }
+                        ]
+                      });
+                    }}
+                    className="w-full border-gray-800 text-gray-400 hover:bg-gray-800"
+                  >
+                    Add Another Time Slot
+                  </Button>
+                </div>
+
                 <Button
                   type="submit"
                   className="w-full bg-blue-500 text-white hover:bg-blue-400"
@@ -368,18 +480,6 @@ export default function ProfessorDashboard() {
                   Create Course
                 </Button>
               </form>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center space-x-2 bg-blue-500 text-white hover:bg-blue-400">
-                <Plus className="h-4 w-4" />
-                <span>Create Course</span>
-              </Button>
-            </DialogTrigger>
-
-            <DialogContent className="bg-black/90 border border-gray-800 text-white">
             </DialogContent>
           </Dialog>
         </div>

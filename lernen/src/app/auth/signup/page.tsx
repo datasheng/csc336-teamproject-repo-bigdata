@@ -51,56 +51,56 @@ export default function SignUpPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        if(!validateForm()) return;
-        try{
-          setIsLoading(true);
-          const { data, error: signUpError} = await supabase.auth.signUp({
-            email: formData.email,
-            password: formData.password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback?type=signup&next=/auth/confirm`,
-              data: {
-                full_name: formData.fullName,
-              },
-            },
-          });
-      
-          console.log('Signup response:', { data, error: signUpError });
-      
-          if (signUpError) {
-            throw signUpError;
-          }
-          const userID =data?.user?.id;
-
-          if (!userID) {
-            setError('Failed to retrieve user ID. Please try again.');
-            return;
-          }
-          const { data: insertData, error: insertError } = await supabase
-            .from('user')
-            .insert({
-                userID: userID,
-                userName: formData.fullName,
+        if (!validateForm()) return;
+        try {
+            setIsLoading(true);
+            const { data, error: signUpError } = await supabase.auth.signUp({
                 email: formData.email,
-                password: formData.password, 
-                userType: userType === "st" ? "Student" : "Professor",
-                userPremiumStatus: false,
+                password: formData.password,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/auth/callback?type=signup&next=/auth/confirm`,
+                    data: {
+                        full_name: formData.fullName,
+                    },
+                },
             });
 
-          if (insertError) {
-            console.error('Error inserting into user table:', insertError);
-            setError('An error occurred while saving your information. Please try again.');
-            return;
-          }
-          router.push('/auth/login?message=Check your email to confirm your account');
+            console.log('Signup response:', { data, error: signUpError });
+
+            if (signUpError) {
+                throw signUpError;
+            }
+            const userID = data?.user?.id;
+
+            if (!userID) {
+                setError('Failed to retrieve user ID. Please try again.');
+                return;
+            }
+            const { data: insertData, error: insertError } = await supabase
+                .from('user')
+                .insert({
+                    userID: userID,
+                    userName: formData.fullName,
+                    email: formData.email,
+                    password: formData.password,
+                    userType: userType === "st" ? "Student" : "Professor",
+                    userPremiumStatus: false,
+                });
+
+            if (insertError) {
+                console.error('Error inserting into user table:', insertError);
+                setError('An error occurred while saving your information. Please try again.');
+                return;
+            }
+            router.push('/auth/login?message=Check your email to confirm your account');
         } catch (error: unknown) {
-          console.error('Error during sign up:', error);
-          setError(error instanceof Error ? error.message : 'An error occurred during sign up');
+            console.error('Error during sign up:', error);
+            setError(error instanceof Error ? error.message : 'An error occurred during sign up');
         } finally {
-          setIsLoading(false);
+            setIsLoading(false);
         }
-      };
-      
+    };
+
     const handleOAuthSignIn = async (provider: 'google' | 'github') => {
         try {
             setIsLoading(true);
