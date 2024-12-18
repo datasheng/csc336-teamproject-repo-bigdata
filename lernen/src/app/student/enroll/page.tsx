@@ -72,6 +72,11 @@ export default function StudentCoursesPage() {
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [trackedCourses, setTrackedCourses] = useState<Set<number>>(new Set());
   const [userDetails, setUserDetails] = useState<{ isPremium: boolean }>({ isPremium: false });
+  const [recommendations, setRecommendations] = useState<{
+    completedCourses: string[];
+    eligibleCourses: string[];
+  }>({ completedCourses: [], eligibleCourses: [] });
+  const [showOnlyEligible, setShowOnlyEligible] = useState(false);
 
   const fetchCourses = async (params: URLSearchParams) => {
     try {
@@ -134,6 +139,20 @@ export default function StudentCoursesPage() {
     };
 
     fetchUserDetails();
+  }, []);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        const response = await fetch('/api/student/recommendations');
+        const data = await response.json();
+        setRecommendations(data);
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+      }
+    };
+
+    fetchRecommendations();
   }, []);
 
   const handleEnroll = async (course: Course) => {
@@ -233,7 +252,7 @@ export default function StudentCoursesPage() {
       
       if (data.success) {
         if (data.tracked) {
-          setTrackedCourses(prev => new Set([...prev, courseId]));
+          setTrackedCourses(prev => new Set(Array.from(prev).concat(courseId)));
           toast.success('Course tracked successfully');
         } else {
           setTrackedCourses(prev => {
@@ -250,6 +269,17 @@ export default function StudentCoursesPage() {
       toast.error('Failed to track course');
     }
   };
+
+  const filteredCourses = availableCourses.filter(course => {
+    const matchesSearch = course.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+                         course.code.toLowerCase().includes(searchInput.toLowerCase());
+    const matchesDepartment = filters.department === "All" || course.department === filters.department;
+    const matchesCredits = !filters.credits || course.credits === parseInt(filters.credits);
+    const isOpen = !filters.showOpenOnly || course.enrolled < course.capacity;
+    const isEligible = !showOnlyEligible || recommendations.eligibleCourses.includes(course.code);
+
+    return matchesSearch && matchesDepartment && matchesCredits && isOpen && isEligible;
+  });
 
   return (
     <div className="flex min-h-screen bg-black">
@@ -342,12 +372,23 @@ export default function StudentCoursesPage() {
                   Show Open Classes Only
                 </label>
               </div>
+
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={showOnlyEligible}
+                  onCheckedChange={setShowOnlyEligible}
+                  className="data-[state=checked]:bg-blue-500"
+                />
+                <label className="text-sm text-gray-400">
+                  Show Only Eligible Courses
+                </label>
+              </div>
             </div>
           </div>
 
           {/* Course Grid */}
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableCourses.map((course: Course, index: number) => (
+            {filteredCourses.map((course: Course, index: number) => (
                 <motion.div
                     key={course.id}
                     initial={{ opacity: 0, y: 20 }}
