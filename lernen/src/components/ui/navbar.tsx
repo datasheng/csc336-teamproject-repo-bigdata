@@ -92,12 +92,12 @@ const Navbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                     label: 'Courses',
                     icon: ClipboardList,
                     href: '/professor/courses'
-                },
-                {
+                }
+                /* 
                     label: 'Students',
                     icon: Users,
-                    href: '/professor/students'
-                }
+                    href: '/professor/students' */
+
             ]
         },
         {

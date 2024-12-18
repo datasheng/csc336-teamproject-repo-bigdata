@@ -126,11 +126,11 @@ const StudentNavbar: React.FC<NavbarProps> = ({ onCollapse }) => {
         {
             section: 'View',
             items: [
-                {
+                /*
                     label: 'Students',
                     icon: Users,
-                    href: '/student/list'
-                },
+                    href: '/student/list'*/
+
                 {
                     label: 'Professor Reviews',
                     icon: Star,

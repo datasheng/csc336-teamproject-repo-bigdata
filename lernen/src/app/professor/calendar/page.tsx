@@ -1,20 +1,35 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Spotlight } from "@/components/ui/spotlight";
-import { Plus, Clock, BookOpen, Hash, MapPin } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import Navbar from '@/components/ui/navbar';
+import toast from 'react-hot-toast';
 
-// Helper function to format time in 12-hour format
+interface Course {
+    id: string;
+    name: string;
+    code: string;
+    professor: string;
+    schedule: string;
+    room: string;
+    credits: number;
+}
+
+interface ProfessorData {
+    firstName: string;
+    lastName: string;
+    department: string;
+    courses: Course[];
+}
+
 const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':').map(Number);
     const period = hours >= 12 ? 'PM' : 'AM';
@@ -22,7 +37,6 @@ const formatTime = (time: string) => {
     return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${period}`;
 };
 
-// Generate time slots from 7 AM to 9 PM
 const generateTimeSlots = () => {
     const slots = [];
     for (let hour = 7; hour <= 21; hour++) {
@@ -35,118 +49,92 @@ const generateTimeSlots = () => {
 const timeSlots = generateTimeSlots();
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-// Dummy data structure that matches potential PostgreSQL schema
-const dummyCourses = [
-    {
-        id: 1,
-        name: "Introduction to Computer Science",
-        code: "CSC 101",
-        location: "Room 405",
-        startTime: "09:00",
-        endTime: "10:30",
-        dayOfWeek: "Monday",
-        professorId: 1
-    },
-    {
-        id: 2,
-        name: "Data Structures",
-        code: "CSC 201",
-        location: "Room 302",
-        startTime: "11:00",
-        endTime: "12:30",
-        dayOfWeek: "Wednesday",
-        professorId: 1
-    }
-];
-
 export default function CalendarPage() {
     const [isNavCollapsed, setIsNavCollapsed] = useState(false);
-    const [courses, setCourses] = useState(dummyCourses);
-    const [newCourse, setNewCourse] = useState({
-        name: "",
-        code: "",
-        location: "",
-        startTime: "",
-        endTime: "",
-        dayOfWeek: "Monday"
-    });
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedSemester, setSelectedSemester] = useState("Fall 2024");
+    const [professorData, setProfessorData] = useState<ProfessorData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleCreateCourse = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Validate time format and course overlap
-        if (!isValidTimeRange(newCourse.startTime, newCourse.endTime)) {
-            alert("Invalid time range. End time must be after start time.");
-            return;
+    const fetchProfessorData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await fetch(`/api/professor?semester=${selectedSemester}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to fetch professor data');
+            }
+
+            setProfessorData(data);
+        } catch (error) {
+            setError(error instanceof Error ? error.message : 'Failed to load professor data');
+            toast.error("Failed to load professor data");
+        } finally {
+            setLoading(false);
         }
-
-        if (hasTimeConflict(newCourse)) {
-            alert("This time slot conflicts with an existing course.");
-            return;
-        }
-
-        setCourses([...courses, {
-            ...newCourse,
-            id: courses.length + 1,
-            professorId: 1
-        }]);
-        setIsDialogOpen(false);
-        setNewCourse({
-            name: "",
-            code: "",
-            location: "",
-            startTime: "",
-            endTime: "",
-            dayOfWeek: "Monday"
-        });
     };
 
-    const isValidTimeRange = (start: string, end: string) => {
-        const startMinutes = timeToMinutes(start);
-        const endMinutes = timeToMinutes(end);
-        return startMinutes < endMinutes;
-    };
+    useEffect(() => {
+        fetchProfessorData();
+    }, [selectedSemester]);
 
-    const hasTimeConflict = (newCourse: any) => {
-        return courses.some(existingCourse => {
-            if (existingCourse.dayOfWeek !== newCourse.dayOfWeek) return false;
+    const parseSchedule = (scheduleString: string) => {
+        const match = scheduleString.match(/(\w+)\s+(\d+):(\d+)\s*(AM|PM)\s*-\s*(\d+):(\d+)\s*(AM|PM)/i);
+        if (match) {
+            const [_, day, startHour, startMin, startPeriod, endHour, endMin, endPeriod] = match;
 
-            const newStart = timeToMinutes(newCourse.startTime);
-            const newEnd = timeToMinutes(newCourse.endTime);
-            const existingStart = timeToMinutes(existingCourse.startTime);
-            const existingEnd = timeToMinutes(existingCourse.endTime);
+            const convertTo24Hour = (hour: string, min: string, period: string) => {
+                let h = parseInt(hour);
+                if (period.toUpperCase() === 'PM' && h !== 12) h += 12;
+                if (period.toUpperCase() === 'AM' && h === 12) h = 0;
+                return `${h.toString().padStart(2, '0')}:${min}`;
+            };
 
-            return (newStart < existingEnd && newEnd > existingStart);
-        });
+            return {
+                day,
+                startTime: convertTo24Hour(startHour, startMin, startPeriod),
+                endTime: convertTo24Hour(endHour, endMin, endPeriod)
+            };
+        }
+        return { day: '', startTime: '', endTime: '' };
     };
 
     const timeToMinutes = (time: string) => {
-        const [hours, minutes] = time.split(':').map(Number);
-        return hours * 60 + minutes;
+        try {
+            const [hours, minutes] = time.split(':').map(Number);
+            return hours * 60 + (minutes || 0);
+        } catch {
+            return 0;
+        }
     };
 
-    const doesCourseOverlap = (course: any, slotTime: string) => {
-        const courseStart = timeToMinutes(course.startTime);
-        const courseEnd = timeToMinutes(course.endTime);
-        const slotStart = timeToMinutes(slotTime);
-        const slotEnd = timeToMinutes(slotTime) + 60;
+    const doesCourseOverlap = (courseSchedule: string, slotTime: string) => {
+        const { startTime, endTime } = parseSchedule(courseSchedule);
+        const slotTimeMinutes = timeToMinutes(slotTime);
+        const courseStartMinutes = timeToMinutes(startTime);
 
-        return courseStart < slotEnd && courseEnd > slotStart;
+        // Check if this is the starting hour slot for the course
+        return slotTimeMinutes === Math.floor(courseStartMinutes / 60) * 60;
     };
 
     const getCourseForSlot = (day: string, time: string) => {
-        return courses.find(course =>
-            course.dayOfWeek === day &&
-            doesCourseOverlap(course, time)
-        );
+        return professorData?.courses.find(course => {
+            const { day: courseDay } = parseSchedule(course.schedule);
+            return courseDay === day && doesCourseOverlap(course.schedule, time);
+        });
     };
 
-    const getCourseHeight = (course: any) => {
-        const startMinutes = timeToMinutes(course.startTime);
-        const endMinutes = timeToMinutes(course.endTime);
+    const getCourseHeight = (scheduleString: string) => {
+        const { startTime, endTime } = parseSchedule(scheduleString);
+        const startMinutes = timeToMinutes(startTime);
+        const endMinutes = timeToMinutes(endTime);
         const duration = endMinutes - startMinutes;
-        const hourHeight = 100;
-        return (duration / 60) * hourHeight;
+        const hourHeight = 100; // height of one hour slot
+
+        // Instead of using Math.ceil, calculate exact pixels
+        return (duration / 60) * hourHeight - 16; // Subtract padding (8px top + 8px bottom)
     };
 
     return (
@@ -164,175 +152,85 @@ export default function CalendarPage() {
                     <div className="relative z-10 flex justify-between items-center mb-8">
                         <h1 className="text-2xl font-bold text-blue-400">Course Calendar</h1>
 
-                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="flex items-center space-x-2 bg-blue-500 text-white hover:bg-blue-400">
-                                    <Plus className="h-4 w-4" />
-                                    <span>Create Course</span>
-                                </Button>
-                            </DialogTrigger>
-
-                            <DialogContent className="bg-black/90 border border-gray-800 text-white">
-                                <DialogHeader>
-                                    <DialogTitle className="text-blue-400">Create New Course</DialogTitle>
-                                    <DialogDescription className="text-gray-400">
-                                        Add a new course to your teaching schedule.
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <form onSubmit={handleCreateCourse} className="space-y-4 mt-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">Course Name</label>
-                                        <div className="relative">
-                                            <BookOpen className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                placeholder="Introduction to Computer Science"
-                                                value={newCourse.name}
-                                                onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">Course Code</label>
-                                        <div className="relative">
-                                            <Hash className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                placeholder="CSC 101"
-                                                value={newCourse.code}
-                                                onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-gray-400">Start Time</label>
-                                            <div className="relative">
-                                                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                                <input
-                                                    type="time"
-                                                    required
-                                                    className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                    value={newCourse.startTime}
-                                                    onChange={(e) => setNewCourse({ ...newCourse, startTime: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-gray-400">End Time</label>
-                                            <div className="relative">
-                                                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                                <input
-                                                    type="time"
-                                                    required
-                                                    className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                    value={newCourse.endTime}
-                                                    onChange={(e) => setNewCourse({ ...newCourse, endTime: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">Location</label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                placeholder="Room 405"
-                                                value={newCourse.location}
-                                                onChange={(e) => setNewCourse({ ...newCourse, location: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">Day of Week</label>
-                                        <select
-                                            required
-                                            className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                            value={newCourse.dayOfWeek}
-                                            onChange={(e) => setNewCourse({ ...newCourse, dayOfWeek: e.target.value })}
-                                        >
-                                            {daysOfWeek.map(day => (
-                                                <option key={day} value={day}>{day}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <Button
-                                        type="submit"
-                                        className="w-full bg-blue-500 text-white hover:bg-blue-400"
-                                    >
-                                        Create Course
-                                    </Button>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
+                        <Select
+                            value={selectedSemester}
+                            onValueChange={setSelectedSemester}
+                        >
+                            <SelectTrigger className="w-[200px] text-gray-200">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-gray-400" />
+                                    <SelectValue placeholder="Select semester" />
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Fall 2024">Fall 2024</SelectItem>
+                                <SelectItem value="Spring 2024">Spring 2024</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
-                    {/* Scrollable Calendar Grid */}
-                    <div className="relative z-10 h-[calc(100vh-200px)] overflow-hidden">
-                        <div className="h-full overflow-x-auto overflow-y-auto 
+                    {loading ? (
+                        <div className="text-center py-8">
+                            <p className="text-gray-400">Loading...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-8">
+                            <p className="text-red-400">{error}</p>
+                        </div>
+                    ) : (
+                        <div className="relative z-10 h-[calc(100vh-200px)] overflow-hidden">
+                            <div className="h-full overflow-x-auto overflow-y-auto 
                                         scrollbar-thin scrollbar-track-black scrollbar-thumb-blue-600">
-                            <div className="min-w-[800px] bg-black/50 rounded-lg border border-gray-800"> 
-                            {/* Calendar Header*/}
-                            <div className="grid grid-cols-8 border-b border-gray-800">
-                                <div className="p-4 text-gray-400">Time</div>
-                                {daysOfWeek.map(day => (
-                                    <div key={day} className="p-4 text-gray-400 font-medium border-l border-gray-800">
-                                        {day}
+                                <div className="min-w-[800px] bg-black/50 rounded-lg border border-gray-800">
+                                    {/* Calendar Header*/}
+                                    <div className="grid grid-cols-8 border-b border-gray-800">
+                                        <div className="p-4 text-gray-400">Time</div>
+                                        {daysOfWeek.map(day => (
+                                            <div key={day} className="p-4 text-gray-400 font-medium border-l border-gray-800">
+                                                {day}
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                            <div className="relative">
-                                {timeSlots.map(time => (
-                                    <div key={time} className="grid grid-cols-8 border-b border-gray-800">
-                                        <div className="p-4 text-gray-400">{formatTime(time)}</div>
-                                        {daysOfWeek.map(day => {
-                                            const course = getCourseForSlot(day, time);
-                                            const isStartTime = course && course.startTime === time;
+                                    <div className="relative">
+                                        {timeSlots.map(time => (
+                                            <div key={time} className="grid grid-cols-8 border-b border-gray-800">
+                                                <div className="p-4 text-gray-400">{formatTime(time)}</div>
+                                                {daysOfWeek.map(day => {
+                                                    const course = getCourseForSlot(day, time);
+                                                    const isStartTime = course && parseSchedule(course.schedule).startTime === time;
 
-                                            return (
-                                                <div key={day} className="p-4 border-l border-gray-800 relative min-h-[100px]">
-                                                    {course && isStartTime && (
-                                                        <div
-                                                            className="absolute left-0 right-0 bg-blue-500/10 rounded-lg border border-blue-500/20 p-2 mx-2"
-                                                            style={{
-                                                                height: `${getCourseHeight(course)}px`,
-                                                                zIndex: 20,
-                                                                backdropFilter: 'blur(8px)',
-                                                                background: 'rgba(59, 130, 246, 0.1)',
-                                                            }}
-                                                        >
-                                                            <div className="relative z-30">
-                                                                <p className="text-blue-400 font-medium">{course.name}</p>
-                                                                <p className="text-sm text-gray-400">{course.location}</p>
-                                                                <p className="text-sm text-gray-400">
-                                                                    {`${formatTime(course.startTime)} - ${formatTime(course.endTime)}`}
-                                                                </p>
-                                                            </div>
+                                                    return (
+                                                        <div key={day} className="p-4 border-l border-gray-800 relative min-h-[100px]">
+                                                            {course && isStartTime && (
+                                                                <div
+                                                                    className="absolute left-0 right-0 bg-blue-500/10 rounded-lg border border-blue-500/20 p-2 mx-2"
+                                                                    style={{
+                                                                        height: `${getCourseHeight(course.schedule)}px`,
+                                                                        zIndex: 20,
+                                                                        backdropFilter: 'blur(8px)',
+                                                                        background: 'rgba(59, 130, 246, 0.1)',
+                                                                    }}
+                                                                >
+                                                                    <div className="relative z-30">
+                                                                        <p className="text-blue-400 font-medium">{course.name}</p>
+                                                                        <p className="text-sm text-gray-400">{course.code}</p>
+                                                                        <p className="text-sm text-gray-400">{course.room}</p>
+                                                                        <p className="text-sm text-gray-400">
+                                                                            {`${formatTime(parseSchedule(course.schedule).startTime)} - ${formatTime(parseSchedule(course.schedule).endTime)}`}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ))}
+                                                    );
+                                                })}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </main>
         </div>

@@ -31,9 +31,9 @@ const ClassContainer: React.FC<ClassContainerProps> = ({
 
   return (
     <div className="w-full max-w-5xl px-4">
-      <div className="bg-black/50 rounded-t-[2.5rem] border border-gray-800 min-h-[calc(100vh-15rem)]">
+      <div className="bg-black/50 rounded-t-[2.5rem] border border-gray-800 h-[calc(100vh-30rem)] flex flex-col">
         {/* Stats Header */}
-        <div className="px-8 pt-6 pb-3 flex justify-between items-center border-b border-gray-800/50">
+        <div className="px-8 pt-6 pb-3 flex justify-between items-center border-b border-gray-800/50 flex-shrink-0">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -57,7 +57,7 @@ const ClassContainer: React.FC<ClassContainerProps> = ({
           </motion.div>
         </div>
 
-        <div className="p-6 space-y-6 max-h-[calc(100vh-25rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
           {courses?.map((course, idx) => (
             <motion.div
               key={course?.id || idx}
@@ -121,20 +121,29 @@ const ClassContainer: React.FC<ClassContainerProps> = ({
             </motion.div>
           ))}
           
+          {/* Create Course button for professors */}
+          {userType === 'professor' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-8 space-y-4"
+            >
+              <Button
+                onClick={onCreateCourse}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                Create Course
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Empty state message */}
           {courses.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center py-8 space-y-4"
             >
-              {userType === 'professor' && (
-                <Button
-                  onClick={onCreateCourse}
-                  className="bg-blue-500 hover:bg-blue-600 mb-4"
-                >
-                  Create Course
-                </Button>
-              )}
               <p className="text-center text-gray-400 text-lg">
                 No classes to show
               </p>
