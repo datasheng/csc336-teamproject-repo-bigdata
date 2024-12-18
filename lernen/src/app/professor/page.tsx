@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
-import { BookOpen, Users, Clock, MapPin, Plus, Hash, GraduationCap } from "lucide-react";
+import { BookOpen, Users, Clock, MapPin, Plus, Hash, GraduationCap, X } from "lucide-react";
 import Navbar from "@/components/ui/navbar";
 import {
   Card,
@@ -24,23 +24,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import TimePicker from "@/components/ui/time-picker";
+
+interface Course {
+  id: string;
+  name: string;
+  code: string;
+  professor: string;
+  schedule: string;
+  room: string;
+  credits: number;
+}
 
 interface ProfessorData {
   firstName: string;
   lastName: string;
   department: string;
-  avgRating: number;
   courses: Course[];
 }
 
-interface Course {
-  courseID: string;
-  courseCode: string;
+interface Prerequisite {
   coursePrefix: string;
-  courseTitle: string;
-  seatsTaken: number;
-  capacity: number;
-  credits: number;
+  courseCode: string;
 }
 
 interface CourseFormData {
@@ -49,6 +54,7 @@ interface CourseFormData {
   courseTitle: string;
   capacity: number;
   credits: number;
+  prerequisites: Prerequisite[];
   schedule: {
     dayOfWeek: string;
     startTime: string;
@@ -62,6 +68,7 @@ export default function ProfessorDashboard() {
   const [selectedSemester, setSelectedSemester] = useState("Fall 2024");
   const [professorData, setProfessorData] = useState<ProfessorData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [formData, setFormData] = useState<CourseFormData>({
     courseCode: "",
@@ -69,6 +76,7 @@ export default function ProfessorDashboard() {
     courseTitle: "",
     capacity: 30,
     credits: 3,
+    prerequisites: [],
     schedule: [{
       dayOfWeek: "Monday",
       startTime: "09:00",
@@ -81,11 +89,21 @@ export default function ProfessorDashboard() {
 
   const fetchProfessorData = async () => {
     try {
-      const response = await fetch("/api/professor");
+      setLoading(true);
+      setError(null);
+      const response = await fetch(`/api/professor?semester=${selectedSemester}`);
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch professor data');
+      }
+
+      console.log("Fetched Data:", data);
       setProfessorData(data);
     } catch (error) {
       console.error("Error fetching professor data:", error);
+      setError(error instanceof Error ? error.message : 'Failed to load professor data');
+      toast.error("Failed to load professor data");
     } finally {
       setLoading(false);
     }
@@ -93,17 +111,23 @@ export default function ProfessorDashboard() {
 
   useEffect(() => {
     fetchProfessorData();
-  }, []);
+  }, [selectedSemester]);
+
+  useEffect(() => {
+    if (!isCreateDialogOpen) {
+      fetchProfessorData();
+    }
+  }, [isCreateDialogOpen]);
 
   const totalStudents = professorData?.courses?.reduce(
-    (sum, course) => sum + course.seatsTaken,
+    (sum, course) => sum + (course.seatsTaken || 0),
     0
   ) || 0;
 
   const totalCourses = professorData?.courses?.length || 0;
 
   const totalCapacity = professorData?.courses?.reduce(
-    (sum, course) => sum + course.capacity,
+    (sum, course) => sum + (course.capacity || 0),
     0
   ) || 0;
 
@@ -111,19 +135,23 @@ export default function ProfessorDashboard() {
     ? ((totalStudents / totalCapacity) * 100).toFixed(1)
     : "0";
 
-  const formattedCourses = professorData?.courses?.map(course => ({
-    id: course.courseID,
-    name: course.courseTitle,
-    code: `${course.coursePrefix} ${course.courseCode}`,
-    professor: `${professorData.firstName} ${professorData.lastName}`,
-    schedule: "Schedule TBD",
-    room: "Room TBD",
-    credits: course.credits
-  })) || [];
+  const validateSchedule = (schedule: CourseFormData['schedule']) => {
+    return schedule.every(slot => 
+      slot.dayOfWeek && 
+      slot.startTime && 
+      slot.endTime && 
+      slot.room
+    );
+  };
 
   const handleCreateCourse = async (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
+    }
+
+    if (!validateSchedule(formData.schedule)) {
+      toast.error("Please fill in all schedule fields");
+      return;
     }
 
     try {
@@ -133,17 +161,8 @@ export default function ProfessorDashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          courseCode: formData.courseCode,
-          coursePrefix: formData.coursePrefix,
-          courseTitle: formData.courseTitle,
-          capacity: formData.capacity,
-          credits: formData.credits,
-          schedule: formData.schedule.map(slot => ({
-            dayOfWeek: slot.dayOfWeek,
-            startTime: `${slot.startTime}:00`,
-            endTime: `${slot.endTime}:00`,
-            room: slot.room
-          }))
+          ...formData,
+          semester: selectedSemester,
         }),
       });
 
@@ -154,27 +173,51 @@ export default function ProfessorDashboard() {
 
       const data = await response.json();
       toast.success('Course created successfully');
-      setIsCreateDialogOpen(false);
-
-      setFormData({
-        courseCode: "",
-        coursePrefix: "",
-        courseTitle: "",
-        capacity: 30,
-        credits: 3,
-        schedule: [{
-          dayOfWeek: "Monday",
-          startTime: "09:00",
-          endTime: "10:15",
-          room: ""
-        }]
-      });
-
+      handleDialogClose();
       fetchProfessorData();
     } catch (error) {
       console.error('Error creating course:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create course');
     }
+  };
+
+  const handleDeleteTimeSlot = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule: prev.schedule.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAddPrerequisite = () => {
+    setFormData(prev => ({
+      ...prev,
+      prerequisites: [...prev.prerequisites, { coursePrefix: "", courseCode: "" }]
+    }));
+  };
+
+  const handleDeletePrerequisite = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      prerequisites: prev.prerequisites.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleDialogClose = () => {
+    setIsCreateDialogOpen(false);
+    setFormData({
+      courseCode: "",
+      coursePrefix: "",
+      courseTitle: "",
+      capacity: 30,
+      credits: 3,
+      prerequisites: [],
+      schedule: [{
+        dayOfWeek: "Monday",
+        startTime: "09:00",
+        endTime: "10:15",
+        room: ""
+      }]
+    });
   };
 
   return (
@@ -275,13 +318,23 @@ export default function ProfessorDashboard() {
             </div>
           </div>
 
-          <div className="relative z-10 flex justify-center">
-            <ClassContainer
-              courses={formattedCourses}
-              userType="professor"
-              onCreateCourse={() => setIsCreateDialogOpen(true)}
-            />
-          </div>
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400">Loading...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-red-400">{error}</p>
+            </div>
+          ) : (
+            <div className="relative z-10 flex justify-center">
+              <ClassContainer 
+                courses={professorData?.courses || []}
+                userType="professor"
+                onCreateCourse={() => setIsCreateDialogOpen(true)}
+              />
+            </div>
+          )}
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogContent className="bg-black/90 border border-gray-800 text-white max-h-[80vh] overflow-y-auto">
@@ -373,10 +426,10 @@ export default function ProfessorDashboard() {
                 <div className="space-y-4">
                   <label className="text-sm text-gray-400">Course Schedule</label>
                   {formData.schedule.map((scheduleItem, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-4">
+                    <div key={index} className="grid grid-cols-2 gap-4 p-4 border border-gray-800 rounded-lg relative">
                       <div className="space-y-2">
                         <Select
-                          value={scheduleItem.dayOfWeek}
+                          value={scheduleItem.dayOfWeek || ""}
                           onValueChange={(value) => {
                             const newSchedule = [...formData.schedule];
                             newSchedule[index] = { ...scheduleItem, dayOfWeek: value };
@@ -388,9 +441,7 @@ export default function ProfessorDashboard() {
                           </SelectTrigger>
                           <SelectContent>
                             {daysOfWeek.map((day) => (
-                              <SelectItem key={day} value={day}>
-                                {day}
-                              </SelectItem>
+                              <SelectItem key={day} value={day}>{day}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -415,38 +466,37 @@ export default function ProfessorDashboard() {
                       </div>
 
                       <div className="space-y-2">
-                        <div className="relative">
-                          <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                          <input
-                            type="time"
-                            required
-                            className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                            value={scheduleItem.startTime}
-                            onChange={(e) => {
-                              const newSchedule = [...formData.schedule];
-                              newSchedule[index] = { ...scheduleItem, startTime: e.target.value };
-                              setFormData({ ...formData, schedule: newSchedule });
-                            }}
-                          />
-                        </div>
+                        <TimePicker
+                          value={scheduleItem.startTime || "09:00"}
+                          onChange={(value) => {
+                            const newSchedule = [...formData.schedule];
+                            newSchedule[index] = { ...scheduleItem, startTime: value };
+                            setFormData({ ...formData, schedule: newSchedule });
+                          }}
+                        />
                       </div>
 
                       <div className="space-y-2">
-                        <div className="relative">
-                          <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                          <input
-                            type="time"
-                            required
-                            className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                            value={scheduleItem.endTime}
-                            onChange={(e) => {
-                              const newSchedule = [...formData.schedule];
-                              newSchedule[index] = { ...scheduleItem, endTime: e.target.value };
-                              setFormData({ ...formData, schedule: newSchedule });
-                            }}
-                          />
-                        </div>
+                        <TimePicker
+                          value={scheduleItem.endTime || "10:15"}
+                          onChange={(value) => {
+                            const newSchedule = [...formData.schedule];
+                            newSchedule[index] = { ...scheduleItem, endTime: value };
+                            setFormData({ ...formData, schedule: newSchedule });
+                          }}
+                        />
                       </div>
+
+                      {formData.schedule.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="absolute -right-3 -top-3 h-7 w-7 rounded-full p-0 hover:bg-red-500/20"
+                          onClick={() => handleDeleteTimeSlot(index)}
+                        >
+                          <X className="h-4 w-4 text-red-500" />
+                        </Button>
+                      )}
                     </div>
                   ))}
 
@@ -467,15 +517,70 @@ export default function ProfessorDashboard() {
                         ]
                       });
                     }}
-                    className="w-full border-gray-800 text-gray-400 hover:bg-gray-800"
+                    className="w-full border-gray-800 bg-gray-900 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
                   >
                     Add Another Time Slot
                   </Button>
                 </div>
 
+                <div className="space-y-4">
+                  <label className="text-sm text-gray-400">Prerequisites</label>
+                  {formData.prerequisites.map((prereq, index) => (
+                    <div key={index} className="flex gap-4 p-4 border border-gray-800 rounded-lg relative">
+                      <Select
+                        value={prereq.coursePrefix}
+                        onValueChange={(value) => {
+                          const newPrereqs = [...formData.prerequisites];
+                          newPrereqs[index] = { ...prereq, coursePrefix: value };
+                          setFormData({ ...formData, prerequisites: newPrereqs });
+                        }}
+                      >
+                        <SelectTrigger className="bg-black border-gray-800">
+                          <SelectValue placeholder="Prefix" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="CSC">CSC</SelectItem>
+                          <SelectItem value="MATH">MATH</SelectItem>
+                          {/* Add more prefixes as needed */}
+                        </SelectContent>
+                      </Select>
+
+                      <input
+                        type="text"
+                        placeholder="Course Code"
+                        className="flex-1 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                        value={prereq.courseCode}
+                        onChange={(e) => {
+                          const newPrereqs = [...formData.prerequisites];
+                          newPrereqs[index] = { ...prereq, courseCode: e.target.value };
+                          setFormData({ ...formData, prerequisites: newPrereqs });
+                        }}
+                      />
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="absolute -right-3 -top-3 h-7 w-7 rounded-full p-0 hover:bg-red-500/20"
+                        onClick={() => handleDeletePrerequisite(index)}
+                      >
+                        <X className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleAddPrerequisite()}
+                    className="w-full border-gray-800 bg-gray-900 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
+                  >
+                    Add Prerequisite
+                  </Button>
+                </div>
+
                 <Button
                   type="submit"
-                  className="w-full bg-blue-500 text-white hover:bg-blue-400"
+                  className="w-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                 >
                   Create Course
                 </Button>

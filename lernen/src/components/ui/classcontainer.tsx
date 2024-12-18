@@ -1,17 +1,19 @@
 import React from 'react';
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { GraduationCap, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Course {
-  id: string | number;
+  id: string;
   name: string;
   code: string;
   professor: string;
   schedule: string;
   room: string;
   credits: number;
+  seatsTaken?: number;
+  capacity?: number;
 }
 
 interface ClassContainerProps {
@@ -25,7 +27,7 @@ const ClassContainer: React.FC<ClassContainerProps> = ({
   userType = 'student',
   onCreateCourse 
 }) => {
-  const totalCredits = courses.reduce((sum, course) => sum + course.credits, 0);
+  const totalCredits = courses.reduce((sum, course) => sum + (course.credits || 0), 0);
 
   return (
     <div className="w-full max-w-5xl px-4">
@@ -56,12 +58,12 @@ const ClassContainer: React.FC<ClassContainerProps> = ({
         </div>
 
         <div className="p-6 space-y-6 max-h-[calc(100vh-25rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
-          {courses.map((course, index) => (
+          {courses?.map((course, idx) => (
             <motion.div
-              key={course.id}
+              key={course?.id || idx}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+              transition={{ duration: 0.3, delay: idx * 0.1 }}
             >
               <motion.div
                 whileHover={{ scale: 1.02 }}
@@ -106,6 +108,11 @@ const ClassContainer: React.FC<ClassContainerProps> = ({
                       <div className="mt-3 space-y-1 text-gray-400">
                         <p>{course.schedule}</p>
                         <p>{course.room}</p>
+                        {course.seatsTaken !== undefined && course.capacity !== undefined && (
+                          <p className="text-sm">
+                            {course.seatsTaken}/{course.capacity} seats taken
+                          </p>
+                        )}
                       </div>
                     </div>
                   </motion.div>

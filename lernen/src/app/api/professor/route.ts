@@ -1,30 +1,55 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
+    const { searchParams } = new URL(request.url);
+    const semester = searchParams.get('semester') || 'Fall 2024';
+
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabase
-      .rpc('get_professor_dashboard', {
-        user_id: user.id
+    const { data: professorData, error: professorError } = await supabase
+      .rpc('get_professor_by_user_id', {
+        p_user_id: user.id,
+        p_semester: semester
       });
 
-    if (error) {
-      console.error('RPC Error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    console.log("Professor Data:", professorData);
+
+    if (professorError) {
+      console.error('RPC Error:', professorError);
+      return NextResponse.json({ error: professorError.message }, { status: 500 });
     }
 
-    if (!data) {
-      return NextResponse.json({ error: "Professor data not found" }, { status: 404 });
+    if (!professorData || professorData.length === 0) {
+      return NextResponse.json({ error: "Professor not found" }, { status: 404 });
     }
 
-    return NextResponse.json(data);
+    const transformedData = {
+      firstName: professorData[0].first_name,
+      lastName: professorData[0].last_name,
+      department: professorData[0].department,
+      courses: Array.isArray(professorData[0].courses) 
+        ? professorData[0].courses.map((course: any) => ({
+            id: course.courseID,
+            name: course.courseTitle,
+            code: `${course.coursePrefix} ${course.courseCode}`,
+            professor: `${professorData[0].first_name} ${professorData[0].last_name}`,
+            schedule: course.schedule || 'Schedule TBD',
+            room: course.room || 'Room TBD',
+            credits: course.credits
+          }))
+        : []
+    };
+
+    console.log("Transformed Data:", transformedData);
+    return NextResponse.json(transformedData);
+
   } catch (error) {
     console.error('Server Error:', error);
     return NextResponse.json(
