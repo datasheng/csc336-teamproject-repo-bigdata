@@ -432,7 +432,7 @@ export default function StudentCoursesPage() {
                                     
                                     <div className="mt-4">
                                         <div className="flex justify-between text-sm text-gray-400 mb-2">
-                                            <span>Available Seats</span>
+                                            <span>Seats Taken</span>
                                             <span>{course.enrolled}/{course.capacity}</span>
                                         </div>
                                         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
