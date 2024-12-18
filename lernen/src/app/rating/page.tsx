@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Spotlight } from "@/components/ui/spotlight";
-import { Search, Star, ThumbsUp, MessageCircle, User, Filter } from "lucide-react";
+import { Search, Star, ThumbsUp, MessageCircle, User, Filter, X } from "lucide-react";
 import StudentNavbar from '@/components/ui/studentnavbar';
 import {
     Card,
@@ -126,7 +126,7 @@ export default function RatingPage() {
     );
 
     return (
-        <div className="flex h-screen bg-black overflow-hidden">
+        <div className="flex min-h-screen bg-black">
             <StudentNavbar onCollapse={setIsNavCollapsed} />
 
             <main className={`flex-1 transition-all duration-300 ${isNavCollapsed ? 'ml-16' : 'ml-64'}`}>
@@ -219,13 +219,19 @@ export default function RatingPage() {
                     {/* Rating Dialog */}
                     <Dialog open={isRatingDialogOpen} onOpenChange={setIsRatingDialogOpen}>
                         <DialogContent className="bg-black border border-gray-800">
-                            <DialogHeader>
+                            <DialogHeader className="relative">
                                 <DialogTitle className="text-blue-400">
                                     {selectedProfessor?.name} - Ratings
                                 </DialogTitle>
                                 <DialogDescription className="text-gray-400">
                                     View all ratings or submit a new one
                                 </DialogDescription>
+                                <button
+                                    onClick={() => setIsRatingDialogOpen(false)}
+                                    className="absolute right-0 top-0 p-2 rounded-full hover:bg-gray-800/50 transition-colors"
+                                >
+                                    <X className="h-4 w-4 text-gray-400" />
+                                </button>
                             </DialogHeader>
 
                             <div className="space-y-6">
