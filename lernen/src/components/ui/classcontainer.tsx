@@ -121,29 +121,32 @@ const ClassContainer: React.FC<ClassContainerProps> = ({
             </motion.div>
           ))}
           
-          {courses.length === 0 ? (
+          {userType === 'professor' && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center py-8 space-y-4"
             >
-              {userType === 'professor' && (
-                <Button
-                  onClick={onCreateCourse}
-                  className="bg-blue-500 hover:bg-blue-600 mb-4"
-                >
-                  Create Course
-                </Button>
-              )}
-              <p className="text-center text-gray-400 text-lg">
-                No classes to show
-              </p>
+              <Button
+                onClick={onCreateCourse}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                Create Course
+              </Button>
             </motion.div>
-          ) : (
+          )}
+
+          {courses.length === 0 && (
+            <p className="text-center text-gray-400 text-lg">
+              No classes to show
+            </p>
+          )}
+
+          {courses.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-8 text-gray-500 text-base"
+              className="text-center py-4 text-gray-500 text-base"
             >
               No more classes to show
             </motion.div>
