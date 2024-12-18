@@ -1,18 +1,27 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Spotlight } from "@/components/ui/spotlight";
-import { Plus, Clock, BookOpen, Hash, MapPin } from 'lucide-react';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import StudentNavbar from '@/components/ui/studentnavbar';
+
+interface CourseScheduleSlot {
+    day: string;
+    startTime: string;
+    endTime: string;
+}
+
+interface Course {
+    id: number;
+    name: string;
+    code: string;
+    professor: string;
+    location: string;
+    schedule: string;
+    enrolled: number;
+    capacity: number;
+    department: string;
+    credits: number;
+}
 
 // Helper function to format time in 12-hour format
 const formatTime = (time: string) => {
@@ -35,119 +44,111 @@ const generateTimeSlots = () => {
 const timeSlots = generateTimeSlots();
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-// Dummy data structure that matches potential PostgreSQL schema
-const dummyCourses = [
-    {
-        id: 1,
-        name: "Introduction to Computer Science",
-        code: "CSC 101",
-        location: "Room 405",
-        startTime: "09:00",
-        endTime: "10:30",
-        dayOfWeek: "Monday",
-        professorId: 1
-    },
-    {
-        id: 2,
-        name: "Data Structures",
-        code: "CSC 201",
-        location: "Room 302",
-        startTime: "11:00",
-        endTime: "12:30",
-        dayOfWeek: "Wednesday",
-        professorId: 1
-    }
-];
-
 export default function CalendarPage() {
     const [isNavCollapsed, setIsNavCollapsed] = useState(false);
-    const [courses, setCourses] = useState(dummyCourses);
-    const [newCourse, setNewCourse] = useState({
-        name: "",
-        code: "",
-        location: "",
-        startTime: "",
-        endTime: "",
-        dayOfWeek: "Monday"
-    });
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleCreateCourse = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Validate time format and course overlap
-        if (!isValidTimeRange(newCourse.startTime, newCourse.endTime)) {
-            alert("Invalid time range. End time must be after start time.");
-            return;
-        }
+    useEffect(() => {
+        const fetchEnrolledCourses = async () => {
+            try {
+                const response = await fetch('/api/student/courses');
+                if (!response.ok) throw new Error('Failed to fetch courses');
+                const data = await response.json();
+                setEnrolledCourses(data.courses || []);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        if (hasTimeConflict(newCourse)) {
-            alert("This time slot conflicts with an existing course.");
-            return;
-        }
+        fetchEnrolledCourses();
+    }, []);
 
-        setCourses([...courses, {
-            ...newCourse,
-            id: courses.length + 1,
-            professorId: 1
-        }]);
-        setIsDialogOpen(false);
-        setNewCourse({
-            name: "",
-            code: "",
-            location: "",
-            startTime: "",
-            endTime: "",
-            dayOfWeek: "Monday"
-        });
+    const parseSchedule = (scheduleString: string): CourseScheduleSlot[] => {
+        // Split the schedule into multiple time slots
+        const timeSlots = scheduleString.split(',').map(slot => slot.trim());
+
+        return timeSlots.map(slot => {
+            const match = slot.match(/(\w+)\s+(\d+):(\d+)\s*(AM|PM)\s*-\s*(\d+):(\d+)\s*(AM|PM)/i);
+            if (match) {
+                const [_, day, startHour, startMin, startPeriod, endHour, endMin, endPeriod] = match;
+
+                const convertTo24Hour = (hour: string, min: string, period: string) => {
+                    let h = parseInt(hour);
+                    if (period.toUpperCase() === 'PM' && h !== 12) h += 12;
+                    if (period.toUpperCase() === 'AM' && h === 12) h = 0;
+                    return `${h.toString().padStart(2, '0')}:${min}`;
+                };
+
+                return {
+                    day,
+                    startTime: convertTo24Hour(startHour, startMin, startPeriod),
+                    endTime: convertTo24Hour(endHour, endMin, endPeriod)
+                };
+            }
+            return null;
+        }).filter((slot): slot is CourseScheduleSlot => slot !== null);
     };
 
-    const isValidTimeRange = (start: string, end: string) => {
-        const startMinutes = timeToMinutes(start);
-        const endMinutes = timeToMinutes(end);
-        return startMinutes < endMinutes;
-    };
-
-    const hasTimeConflict = (newCourse: any) => {
-        return courses.some(existingCourse => {
-            if (existingCourse.dayOfWeek !== newCourse.dayOfWeek) return false;
-
-            const newStart = timeToMinutes(newCourse.startTime);
-            const newEnd = timeToMinutes(newCourse.endTime);
-            const existingStart = timeToMinutes(existingCourse.startTime);
-            const existingEnd = timeToMinutes(existingCourse.endTime);
-
-            return (newStart < existingEnd && newEnd > existingStart);
-        });
-    };
-
-    const timeToMinutes = (time: string) => {
+    const timeToMinutes = (time: string): number => {
         const [hours, minutes] = time.split(':').map(Number);
         return hours * 60 + minutes;
     };
 
-    const doesCourseOverlap = (course: any, slotTime: string) => {
-        const courseStart = timeToMinutes(course.startTime);
-        const courseEnd = timeToMinutes(course.endTime);
-        const slotStart = timeToMinutes(slotTime);
-        const slotEnd = timeToMinutes(slotTime) + 60;
+    const doesCourseOverlap = (scheduleString: string, day: string, slotTime: string): boolean => {
+        const timeSlots = parseSchedule(scheduleString);
+        return timeSlots.some(slot => {
+            if (!slot || slot.day !== day) return false;
 
-        return courseStart < slotEnd && courseEnd > slotStart;
+            const slotMinutes = timeToMinutes(slotTime);
+            const courseStartMinutes = timeToMinutes(slot.startTime);
+            const courseEndMinutes = timeToMinutes(slot.endTime);
+
+            return slotMinutes >= courseStartMinutes && slotMinutes < courseEndMinutes;
+        });
     };
 
-    const getCourseForSlot = (day: string, time: string) => {
-        return courses.find(course =>
-            course.dayOfWeek === day &&
-            doesCourseOverlap(course, time)
+    const getCourseForSlot = (day: string, time: string): Course | undefined => {
+        return enrolledCourses.find(course =>
+            doesCourseOverlap(course.schedule, day, time)
         );
     };
 
-    const getCourseHeight = (course: any) => {
-        const startMinutes = timeToMinutes(course.startTime);
-        const endMinutes = timeToMinutes(course.endTime);
+    const getCourseHeight = (scheduleString: string, day: string): number => {
+        const timeSlots = parseSchedule(scheduleString);
+        const daySlot = timeSlots.find(slot => slot?.day === day);
+
+        if (!daySlot) return 0;
+
+        const startMinutes = timeToMinutes(daySlot.startTime);
+        const endMinutes = timeToMinutes(daySlot.endTime);
         const duration = endMinutes - startMinutes;
         const hourHeight = 100;
         return (duration / 60) * hourHeight;
     };
+
+    const isStartTimeForDay = (scheduleString: string, day: string, time: string): boolean => {
+        const timeSlots = parseSchedule(scheduleString);
+        return timeSlots.some(slot =>
+            slot?.day === day && slot?.startTime === time
+        );
+    };
+
+    if (loading) {
+        return (
+            <div className="flex h-screen bg-black">
+                <StudentNavbar onCollapse={setIsNavCollapsed} />
+                <main className={`flex-1 transition-all duration-300 ${isNavCollapsed ? 'ml-16' : 'ml-64'}`}>
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-400">Loading your schedule...</p>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-screen bg-black overflow-hidden">
@@ -163,174 +164,63 @@ export default function CalendarPage() {
                     {/* Header Section */}
                     <div className="relative z-10 flex justify-between items-center mb-8">
                         <h1 className="text-2xl font-bold text-blue-400">Course Calendar</h1>
-
-                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="flex items-center space-x-2 bg-blue-500 text-white hover:bg-blue-400">
-                                    <Plus className="h-4 w-4" />
-                                    <span>Create Course</span>
-                                </Button>
-                            </DialogTrigger>
-
-                            <DialogContent className="bg-black/90 border border-gray-800 text-white">
-                                <DialogHeader>
-                                    <DialogTitle className="text-blue-400">Create New Course</DialogTitle>
-                                    <DialogDescription className="text-gray-400">
-                                        Add a new course to your teaching schedule.
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <form onSubmit={handleCreateCourse} className="space-y-4 mt-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">Course Name</label>
-                                        <div className="relative">
-                                            <BookOpen className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                placeholder="Introduction to Computer Science"
-                                                value={newCourse.name}
-                                                onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">Course Code</label>
-                                        <div className="relative">
-                                            <Hash className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                placeholder="CSC 101"
-                                                value={newCourse.code}
-                                                onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-gray-400">Start Time</label>
-                                            <div className="relative">
-                                                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                                <input
-                                                    type="time"
-                                                    required
-                                                    className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                    value={newCourse.startTime}
-                                                    onChange={(e) => setNewCourse({ ...newCourse, startTime: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-gray-400">End Time</label>
-                                            <div className="relative">
-                                                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                                <input
-                                                    type="time"
-                                                    required
-                                                    className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                    value={newCourse.endTime}
-                                                    onChange={(e) => setNewCourse({ ...newCourse, endTime: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">Location</label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full pl-10 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                                placeholder="Room 405"
-                                                value={newCourse.location}
-                                                onChange={(e) => setNewCourse({ ...newCourse, location: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">Day of Week</label>
-                                        <select
-                                            required
-                                            className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
-                                            value={newCourse.dayOfWeek}
-                                            onChange={(e) => setNewCourse({ ...newCourse, dayOfWeek: e.target.value })}
-                                        >
-                                            {daysOfWeek.map(day => (
-                                                <option key={day} value={day}>{day}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <Button
-                                        type="submit"
-                                        className="w-full bg-blue-500 text-white hover:bg-blue-400"
-                                    >
-                                        Create Course
-                                    </Button>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
                     </div>
 
                     {/* Scrollable Calendar Grid */}
                     <div className="relative z-10 h-[calc(100vh-200px)] overflow-hidden">
                         <div className="h-full overflow-x-auto overflow-y-auto 
                                         scrollbar-thin scrollbar-track-black scrollbar-thumb-blue-600">
-                            <div className="min-w-[800px] bg-black/50 rounded-lg border border-gray-800"> 
-                            {/* Calendar Header*/}
-                            <div className="grid grid-cols-8 border-b border-gray-800">
-                                <div className="p-4 text-gray-400">Time</div>
-                                {daysOfWeek.map(day => (
-                                    <div key={day} className="p-4 text-gray-400 font-medium border-l border-gray-800">
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="relative">
-                                {timeSlots.map(time => (
-                                    <div key={time} className="grid grid-cols-8 border-b border-gray-800">
-                                        <div className="p-4 text-gray-400">{formatTime(time)}</div>
-                                        {daysOfWeek.map(day => {
-                                            const course = getCourseForSlot(day, time);
-                                            const isStartTime = course && course.startTime === time;
+                            <div className="min-w-[800px] bg-black/50 rounded-lg border border-gray-800">
+                                {/* Calendar Header */}
+                                <div className="grid grid-cols-8 border-b border-gray-800">
+                                    <div className="p-4 text-gray-400">Time</div>
+                                    {daysOfWeek.map(day => (
+                                        <div key={day} className="p-4 text-gray-400 font-medium border-l border-gray-800">
+                                            {day}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="relative">
+                                    {timeSlots.map(time => (
+                                        <div key={time} className="grid grid-cols-8 border-b border-gray-800">
+                                            <div className="p-4 text-gray-400">{formatTime(time)}</div>
+                                            {daysOfWeek.map(day => {
+                                                const course = getCourseForSlot(day, time);
+                                                const isStartTime = course && isStartTimeForDay(course.schedule, day, time);
 
-                                            return (
-                                                <div key={day} className="p-4 border-l border-gray-800 relative min-h-[100px]">
-                                                    {course && isStartTime && (
-                                                        <div
-                                                            className="absolute left-0 right-0 bg-blue-500/10 rounded-lg border border-blue-500/20 p-2 mx-2"
-                                                            style={{
-                                                                height: `${getCourseHeight(course)}px`,
-                                                                zIndex: 20,
-                                                                backdropFilter: 'blur(8px)',
-                                                                background: 'rgba(59, 130, 246, 0.1)',
-                                                            }}
-                                                        >
-                                                            <div className="relative z-30">
-                                                                <p className="text-blue-400 font-medium">{course.name}</p>
-                                                                <p className="text-sm text-gray-400">{course.location}</p>
-                                                                <p className="text-sm text-gray-400">
-                                                                    {`${formatTime(course.startTime)} - ${formatTime(course.endTime)}`}
-                                                                </p>
+                                                return (
+                                                    <div key={day} className="p-4 border-l border-gray-800 relative min-h-[100px]">
+                                                        {course && isStartTime && (
+                                                            <div
+                                                                className="absolute left-0 right-0 bg-blue-500/10 rounded-lg border border-blue-500/20 p-2 mx-2"
+                                                                style={{
+                                                                    height: `${getCourseHeight(course.schedule, day)}px`,
+                                                                    zIndex: 20,
+                                                                    backdropFilter: 'blur(8px)',
+                                                                    background: 'rgba(59, 130, 246, 0.1)',
+                                                                }}
+                                                            >
+                                                                <div className="relative z-30">
+                                                                    <p className="text-blue-400 font-medium">{course.name}</p>
+                                                                    <p className="text-sm text-gray-400">{course.code}</p>
+                                                                    <p className="text-sm text-gray-400">{course.location}</p>
+                                                                    {parseSchedule(course.schedule)
+                                                                        .filter(slot => slot.day === day)
+                                                                        .map((slot, index) => (
+                                                                            <p key={index} className="text-sm text-gray-400">
+                                                                                {`${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`}
+                                                                            </p>
+                                                                        ))}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}
+                                                        )}
                                                     </div>
                                                 );
                                             })}
                                         </div>
                                     ))}
+                                </div>
                             </div>
-                        </div>
                         </div>
                     </div>
                 </div>
