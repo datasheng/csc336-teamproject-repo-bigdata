@@ -380,7 +380,6 @@ export default function ProfessorDashboard() {
             </DialogTrigger>
 
             <DialogContent className="bg-black/90 border border-gray-800 text-white">
-              {/* Rest of the dialog content you provided */}
             </DialogContent>
           </Dialog>
         </div>
