@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -9,16 +9,21 @@ import {
     CalendarDays,
     Users,
     ClipboardList,
-    BellRing,
     ChevronLeft,
     ChevronRight,
-    LogOut
+    LogOut,
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { motion } from "framer-motion";
 
 interface NavbarProps {
     onCollapse?: (collapsed: boolean) => void;
+}
+
+interface UserDetails {
+    username: string;
+    email: string;
 }
 
 type NavItem = {
@@ -33,6 +38,21 @@ const Navbar: React.FC<NavbarProps> = ({ onCollapse }) => {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
+    const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const response = await fetch('/api/user/details');
+                const data = await response.json();
+                setUserDetails(data);
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+            }
+        };
+
+        fetchUserDetails();
+    }, []);
 
     const handleCollapse = () => {
         const newCollapsedState = !isCollapsed;
@@ -140,11 +160,10 @@ const Navbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                                         <Link
                                             key={item.label}
                                             href={item.href}
-                                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors relative group ${
-                                                isActive
-                                                    ? 'bg-blue-500/10 text-blue-400'
-                                                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                                            }`}
+                                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors relative group ${isActive
+                                                ? 'bg-blue-500/10 text-blue-400'
+                                                : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                                                }`}
                                         >
                                             <div className="flex items-center space-x-2">
                                                 <Icon className="h-4 w-4 flex-shrink-0" />
@@ -189,19 +208,41 @@ const Navbar: React.FC<NavbarProps> = ({ onCollapse }) => {
                 {!isCollapsed && (
                     <div className="border-t border-gray-800 p-4">
                         <div className="flex items-center space-x-3">
-                            <div className="h-8 w-8 rounded-full bg-gray-800" />
+                            <motion.div
+                                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-500/20"
+                                whileHover={{ scale: 1.1 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            >
+                                <span className="text-xl font-bold text-blue-400">
+                                    {userDetails?.username?.[0] || '?'}
+                                </span>
+                            </motion.div>
                             <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white">Professor Name</span>
-                                <span className="text-xs text-gray-400">professor@lernen.com</span>
+                                <span className="text-sm font-medium text-white">
+                                    {userDetails?.username || 'Loading...'}
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                    {userDetails?.email || 'Loading...'}
+                                </span>
                             </div>
                         </div>
                     </div>
                 )}
                 {isCollapsed && (
                     <div className="border-t border-gray-800 p-4 flex justify-center">
-                        <div className="h-8 w-8 rounded-full bg-gray-800 group relative">
-                            <div className="absolute left-full ml-2 hidden rounded-md bg-gray-800 px-2 py-1 text-xs text-white group-hover:block whitespace-nowrap">
-                                Professor Name
+                        <div className="relative h-8 w-8 rounded-full group flex items-center justify-center">
+                            <motion.div
+                                className="h-full w-full rounded-full flex items-center justify-center bg-blue-500/20"
+                                whileHover={{ scale: 1.1 }}
+                            >
+                                <span className="text-sm font-bold text-blue-400">
+                                    {userDetails?.username?.[0] || '?'}
+                                </span>
+                            </motion.div>
+
+                            {/* Tooltip showing username on hover */}
+                            <div className="absolute left-full ml-2 hidden rounded-md bg-gray-800 px-2 py-1 text-xs text-white group-hover:block z-50">
+                                {userDetails?.username || 'Loading...'}
                             </div>
                         </div>
                     </div>
