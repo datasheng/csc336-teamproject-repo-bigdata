@@ -154,10 +154,6 @@ export default function SettingsPage() {
                                                 </li>
                                                 <li className="flex items-center text-gray-400">
                                                     <Check className="h-4 w-4 mr-2 text-blue-500" />
-                                                    3 courses enrollment limit
-                                                </li>
-                                                <li className="flex items-center text-gray-400">
-                                                    <Check className="h-4 w-4 mr-2 text-blue-500" />
                                                     Basic calendar features
                                                 </li>
                                                 <li className="flex items-center text-gray-400">
@@ -202,10 +198,6 @@ export default function SettingsPage() {
                                                     <li className="flex items-center text-gray-300">
                                                         <Check className="h-4 w-4 mr-2 text-blue-500" />
                                                         Basic course access
-                                                    </li>
-                                                    <li className="flex items-center text-gray-300">
-                                                        <Check className="h-4 w-4 mr-2 text-blue-500" />
-                                                        3 courses enrollment limit
                                                     </li>
                                                     <li className="flex items-center text-gray-300">
                                                         <Check className="h-4 w-4 mr-2 text-blue-500" />
