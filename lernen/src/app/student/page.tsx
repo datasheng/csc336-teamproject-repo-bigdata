@@ -36,6 +36,8 @@ interface Course {
   courseTitle: string;
   credits: number;
   professor: Professor;
+  schedule: string;
+  room: string;
 }
 
 interface ScheduleCourse {
@@ -106,8 +108,8 @@ export default function StudentDashboard() {
     grade: "N/A",
     assignments: 0,
     upcomingDeadlines: 0,
-    schedule: "Schedule TBD",
-    room: "Room TBD"
+    schedule: sc.course.schedule,
+    room: sc.course.room
   }));
 
   // Calculate semester statistics
