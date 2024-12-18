@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Spotlight } from "@/components/ui/spotlight";
-import { Search, Users, Clock, MapPin, Plus, Check } from "lucide-react";
+import { Search, Users, Clock, MapPin, Plus, Check, Star } from "lucide-react";
 import StudentNavbar from "@/components/ui/studentnavbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -70,6 +70,8 @@ export default function StudentCoursesPage() {
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
   const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [trackedCourses, setTrackedCourses] = useState<Set<number>>(new Set());
+  const [userDetails, setUserDetails] = useState<{ isPremium: boolean }>({ isPremium: false });
 
   const fetchCourses = async (params: URLSearchParams) => {
     try {
@@ -118,6 +120,20 @@ export default function StudentCoursesPage() {
     };
 
     fetchEnrolledCourses();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const response = await fetch('/api/user/details');
+        const data = await response.json();
+        setUserDetails({ isPremium: data.userpremiumstatus });
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      }
+    };
+
+    fetchUserDetails();
   }, []);
 
   const handleEnroll = async (course: Course) => {
@@ -201,6 +217,38 @@ export default function StudentCoursesPage() {
 
   const isEnrolled = (courseId: number) => {
     return enrolledCourses.some((course: Course) => course.id === courseId);
+  };
+
+  const handleTrack = async (courseId: number) => {
+    try {
+      const response = await fetch('/api/student/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ courseId }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        if (data.tracked) {
+          setTrackedCourses(prev => new Set([...prev, courseId]));
+          toast.success('Course tracked successfully');
+        } else {
+          setTrackedCourses(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(courseId);
+            return newSet;
+          });
+          toast.success('Course untracked');
+        }
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error('Failed to track course');
+    }
   };
 
   return (
@@ -320,29 +368,51 @@ export default function StudentCoursesPage() {
                                             {course.code}
                                         </CardDescription>
                                     </div>
-                                    <motion.button
-                                        onClick={() => isEnrolled(course.id) ? handleUnenroll(course.id) : handleEnroll(course)}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.99 }}
-                                        transition={{ type: "spring", stiffness: 400, damping: 5 }}
-                                        className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
-                                            isEnrolled(course.id)
-                                                ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                                                : "bg-blue-500 text-white hover:bg-blue-400"
-                                        }`}
-                                    >
+                                    <div className="flex items-center space-x-2">
+                                      {userDetails.isPremium && (
+                                        <motion.button
+                                          whileHover={{ scale: 1.05 }}
+                                          whileTap={{ scale: 0.95 }}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            handleTrack(course.id);
+                                          }}
+                                          className={`flex items-center space-x-1 px-4 py-2 rounded-lg transition-colors ${
+                                            trackedCourses.has(course.id)
+                                              ? 'bg-yellow-500/20 text-yellow-400'
+                                              : 'bg-gray-800/50 text-gray-400 hover:text-yellow-400'
+                                          }`}
+                                        >
+                                          <Star className="h-4 w-4" fill={trackedCourses.has(course.id) ? "currentColor" : "none"} />
+                                        </motion.button>
+                                      )}
+                                      
+                                      <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          if (isEnrolled(course.id)) {
+                                            handleUnenroll(course.id);
+                                          } else {
+                                            handleEnroll(course);
+                                          }
+                                        }}
+                                        className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                      >
                                         {isEnrolled(course.id) ? (
-                                            <>
-                                                <Check className="h-4 w-4" />
-                                                <span>Enrolled</span>
-                                            </>
+                                          <>
+                                            <Check className="h-4 w-4" />
+                                            <span>Enrolled</span>
+                                          </>
                                         ) : (
-                                            <>
-                                                <Plus className="h-4 w-4" />
-                                                <span>Enroll</span>
-                                            </>
+                                          <>
+                                            <Plus className="h-4 w-4" />
+                                            <span>Enroll</span>
+                                          </>
                                         )}
-                                    </motion.button>
+                                      </motion.button>
+                                    </div>
                                 </div>
                             </CardHeader>
                             <CardContent>
