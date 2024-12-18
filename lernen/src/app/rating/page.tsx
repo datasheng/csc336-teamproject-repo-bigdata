@@ -64,28 +64,6 @@ export default function RatingPage() {
         course: ""
     });
 
-    const [apiData, setApiData] = useState(null);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Fetch data from placeholder API
-                const response = await fetch('/api/student/ratings/getRatings');
-                const result = await response.json();
-                
-                // Log the result to the console
-                console.log(result);
-                
-                // Store the fetched data in state
-                setApiData(result);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        };
-
-        fetchData();
-    }, []);
-
     useEffect(() => {
         fetchRatings();
     }, []);
