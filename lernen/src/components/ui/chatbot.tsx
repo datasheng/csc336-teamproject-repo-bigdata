@@ -6,10 +6,15 @@ import { MessageCircle, Send, Bot, User, X, Minimize2 } from 'lucide-react';
 interface Message {
     type: 'user' | 'assistant';
     content: string;
-    category?: 'general' | 'course' | 'help';
+    timestamp: number;
 }
 
-const systemContext = `You are an AI assistant for a learning management system called Lernen. 
+interface ChatContext {
+    recentMessages: string[];
+    lastInteractionTime: number;
+}
+
+const systemContext = `You are an AI assistant for a learning management system called Lernen.
 Your primary functions include:
 - Helping students with course-related queries
 - Providing study tips and learning strategies
@@ -17,21 +22,41 @@ Your primary functions include:
 - Assisting with technical issues on the platform
 - Offering academic guidance
 
-Keep responses concise, friendly, and focused on education. If you don't have specific information 
-about a course or professor, you can provide general academic advice instead.;`
+Important: Always consider the user's recent messages for context. If they've shared preferences or information,
+reference these in your responses to make the conversation more personal and contextual.
+
+Before responding, review their last 3 messages (if available) to maintain conversation continuity.
+Keep responses concise, friendly, and focused on education. If you don't have specific information
+about a course or professor, you can provide general academic advice instead.`;
 
 const Chatbot: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isInitialized, setIsInitialized] = useState(false);
+    const [chatContext, setChatContext] = useState<ChatContext>({
+        recentMessages: [],
+        lastInteractionTime: Date.now()
+    });
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
         }
+    }, [messages]);
+
+    // Update context whenever messages change
+    useEffect(() => {
+        const userMessages = messages
+            .filter(msg => msg.type === 'user')
+            .map(msg => msg.content)
+            .slice(-3);  // Get last 3 messages
+
+        setChatContext({
+            recentMessages: userMessages,
+            lastInteractionTime: Date.now()
+        });
     }, [messages]);
 
     const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
@@ -41,7 +66,8 @@ const Chatbot: React.FC = () => {
 
         const userMessage: Message = {
             type: 'user',
-            content: inputMessage
+            content: inputMessage,
+            timestamp: Date.now()
         };
 
         setMessages(prev => [...prev, userMessage]);
@@ -50,19 +76,32 @@ const Chatbot: React.FC = () => {
 
         try {
             const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-            const result = await model.generateContent(inputMessage);
+
+            // Build context-aware prompt
+            let contextPrompt = systemContext;
+            if (chatContext.recentMessages.length > 0) {
+                contextPrompt += "\n\nRecent user messages for context:\n" +
+                    chatContext.recentMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n') +
+                    "\n\nNew message: " + inputMessage;
+            } else {
+                contextPrompt += "\n\nNew message: " + inputMessage;
+            }
+
+            const result = await model.generateContent(contextPrompt);
             const response = await result.response;
             const text = response.text();
 
             setMessages(prev => [...prev, {
                 type: 'assistant',
-                content: text
+                content: text,
+                timestamp: Date.now()
             }]);
         } catch (error) {
             console.error('Error calling Gemini:', error);
             setMessages(prev => [...prev, {
                 type: 'assistant',
-                content: 'Sorry, I encountered an error. Please try again.'
+                content: 'Sorry, I encountered an error. Please try again.',
+                timestamp: Date.now()
             }]);
         } finally {
             setIsLoading(false);
@@ -70,15 +109,25 @@ const Chatbot: React.FC = () => {
     };
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             sendMessage();
         }
+    };
+
+    const resetChat = () => {
+        setIsOpen(false);
+        setMessages([]);
+        setChatContext({
+            recentMessages: [],
+            lastInteractionTime: Date.now()
+        });
     };
 
     return (
         <div className="fixed bottom-6 right-6 z-50">
             {isOpen ? (
-                <div className="flex flex-col w-[450px] h-[600px] bg-gray border border-gray-800 rounded-lg shadow-lg animate-in slide-in-from-bottom-3">
+                <div className="flex flex-col w-[450px] h-[600px] bg-gray/80 backdrop-blur-md border border-gray-800 rounded-lg shadow-lg animate-in slide-in-from-bottom-3">
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-800">
                         <div className="flex items-center space-x-2">
@@ -93,10 +142,7 @@ const Chatbot: React.FC = () => {
                                 <Minimize2 className="h-4 w-4 text-gray-400" />
                             </button>
                             <button
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    setMessages([]);
-                                }}
+                                onClick={resetChat}
                                 className="p-1 hover:bg-gray-800 rounded-full transition-colors"
                             >
                                 <X className="h-4 w-4 text-gray-400" />

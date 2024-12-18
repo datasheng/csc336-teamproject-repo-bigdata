@@ -61,6 +61,7 @@ export default function StudentDashboard() {
   const [selectedSemester, setSelectedSemester] = useState("Fall 2024");
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     async function fetchUserData() {
@@ -68,6 +69,13 @@ export default function StudentDashboard() {
         const response = await fetch("/api/student");
         const data = await response.json();
         setUserData(data);
+
+        // Fetch premium status
+        const userDetailsResponse = await fetch("/api/user/details");
+        const userDetails = await userDetailsResponse.json();
+        console.log("User details response:", userDetails); // Add this log
+        console.log("Premium status:", userDetails.userpremiumstatus); // Add this log
+        setIsPremium(userDetails.userpremiumstatus);
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -82,10 +90,10 @@ export default function StudentDashboard() {
   const currentSchedule = userData?.schedule?.find(
     (s) => s.semester === selectedSemester
   );
-  
-  const courses: ScheduleCourse[] = currentSchedule?.scheduleCourse 
-    ? Array.isArray(currentSchedule.scheduleCourse) 
-      ? currentSchedule.scheduleCourse 
+
+  const courses: ScheduleCourse[] = currentSchedule?.scheduleCourse
+    ? Array.isArray(currentSchedule.scheduleCourse)
+      ? currentSchedule.scheduleCourse
       : Object.values(currentSchedule.scheduleCourse)
     : [];
 
@@ -137,9 +145,8 @@ export default function StudentDashboard() {
       <Navbar onCollapse={setIsNavCollapsed} />
 
       <main
-        className={`flex-1 transition-all duration-300 ${
-          isNavCollapsed ? "ml-16" : "ml-64"
-        }`}
+        className={`flex-1 transition-all duration-300 ${isNavCollapsed ? "ml-16" : "ml-64"
+          }`}
       >
         <div className="relative min-h-screen bg-black/[0.96] text-white p-8">
           <Spotlight
@@ -147,20 +154,20 @@ export default function StudentDashboard() {
             fill="#60A5FA"
           />
 
-{/* Header Section */}
-<div className="relative z-10 flex flex-col items-center mt-[12vh]">
-  <BlurFade delay={0.54} inView>
-    <h1 className="text-6xl font-bold tracking-[0.04em] bg-gradient-to-b from-blue-400/90 via-blue-400/70 to-blue-400/50 bg-clip-text text-transparent">
-      Hi {userData?.username || "Student"}!
-    </h1>
-  </BlurFade>
-  
-  <BlurFade delay={0.5} inView>
-    <h2 className="text-3xl text-gray-400 mt-6 font-medium tracking-wide">
-      Your Classes for {selectedSemester}
-    </h2>
-  </BlurFade>
-</div>
+          {/* Header Section */}
+          <div className="relative z-10 flex flex-col items-center mt-[12vh]">
+            <BlurFade delay={0.54} inView>
+              <h1 className="text-6xl font-bold tracking-[0.04em] bg-gradient-to-b from-blue-400/90 via-blue-400/70 to-blue-400/50 bg-clip-text text-transparent">
+                Hi {userData?.username || "Student"}!
+              </h1>
+            </BlurFade>
+
+            <BlurFade delay={0.5} inView>
+              <h2 className="text-3xl text-gray-400 mt-6 font-medium tracking-wide">
+                Your Classes for {selectedSemester}
+              </h2>
+            </BlurFade>
+          </div>
 
           {/* Semester Select */}
           <div className="relative z-10 flex justify-center mt-8 mb-6">
@@ -189,7 +196,7 @@ export default function StudentDashboard() {
           </div>
         </div>
       </main>
-      <Chatbot />
+      {isPremium && <Chatbot />}
     </div>
   );
 }
