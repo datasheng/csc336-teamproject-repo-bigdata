@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 
 interface Professor {
+    profid: string;
     name: string;
     ratings: Rating[];
     department: string;
@@ -62,6 +63,28 @@ export default function RatingPage() {
         comment: "",
         course: ""
     });
+
+    const [apiData, setApiData] = useState(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch data from placeholder API
+                const response = await fetch('/api/student/ratings/getRatings');
+                const result = await response.json();
+                
+                // Log the result to the console
+                console.log(result);
+                
+                // Store the fetched data in state
+                setApiData(result);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     useEffect(() => {
         fetchRatings();
@@ -121,10 +144,14 @@ export default function RatingPage() {
     };
 
     const filteredProfessors = professors.filter(professor =>
-        (professor.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        professor.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
         (selectedDepartment === "all" || professor.department === selectedDepartment)
     );
 
+    const getCoursesForProfessor = (profid: string) => {
+        return rateCourses.filter(course => course.profid === profid);
+    };
+    
     return (
         <div className="flex min-h-screen bg-black">
             <StudentNavbar onCollapse={setIsNavCollapsed} />
@@ -195,20 +222,24 @@ export default function RatingPage() {
                                         </div>
 
                                         <div className="space-y-4">
-                                            {professor.ratings.slice(0, 2).map((rating) => (
-                                                <div
-                                                    key={rating.id}
-                                                    className="space-y-2 p-3 rounded-lg bg-gray-800/20"
-                                                >
-                                                    <div className="flex items-center justify-between">
-                                                        <StarRating rating={rating.rating} />
-                                                        <span className="text-xs text-gray-400">
-                                                            {rating.course}
-                                                        </span>
+                                            {professor.ratings.length > 0 ? (
+                                                professor.ratings.slice(0, 2).map((rating) => (
+                                                    <div
+                                                        key={rating.id}
+                                                        className="space-y-2 p-3 rounded-lg bg-gray-800/20"
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <StarRating rating={rating.rating} />
+                                                            <span className="text-xs text-gray-400">
+                                                                {rating.course}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm text-gray-400">{rating.comment}</p>
                                                     </div>
-                                                    <p className="text-sm text-gray-400">{rating.comment}</p>
-                                                </div>
-                                            ))}
+                                                ))
+                                            ) : (
+                                                <div className="p-3 text-gray-400">No Ratings Yet</div>
+                                            )}
                                         </div>
                                     </div>
                                 </CardContent>
@@ -236,7 +267,7 @@ export default function RatingPage() {
 
                             <div className="space-y-6">
                                 {/* Rating Form */}
-                                {rateCourses.length > 0 && (
+                                {getCoursesForProfessor(selectedProfessor?.profid || "").length > 0 && (
                                     <div className="space-y-4 border-b border-gray-800 pb-6">
                                         <h3 className="text-lg font-semibold text-blue-400">Submit a Rating</h3>
                                         <div className="space-y-4">
@@ -248,7 +279,7 @@ export default function RatingPage() {
                                                     <SelectValue placeholder="Select a course" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {rateCourses.map((course) => (
+                                                    {getCoursesForProfessor(selectedProfessor?.profid || "").map((course) => (
                                                         <SelectItem key={course.courseid} value={course.courseid}>
                                                             {course.coursetitle}
                                                         </SelectItem>
@@ -272,7 +303,7 @@ export default function RatingPage() {
 
                                             <textarea
                                                 placeholder="Write your review..."
-                                                className="w-full h-24 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500"
+                                                className="w-full h-24 px-4 py-2 bg-black border border-gray-800 rounded-lg focus:outline-none focus:border-blue-500 text-white"
                                                 value={newRating.comment}
                                                 onChange={(e) => setNewRating({ ...newRating, comment: e.target.value })}
                                             />
@@ -292,7 +323,8 @@ export default function RatingPage() {
                                 <div className="space-y-4">
                                     <h3 className="text-lg font-semibold text-blue-400">All Ratings</h3>
                                     <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                                        {selectedProfessor?.ratings.map((rating) => (
+                                    {selectedProfessor?.ratings && selectedProfessor.ratings.length > 0 ? (
+                                        selectedProfessor.ratings.map((rating) => (
                                             <div
                                                 key={rating.id}
                                                 className="p-4 rounded-lg bg-gray-800/20 space-y-2"
@@ -305,7 +337,10 @@ export default function RatingPage() {
                                                 </div>
                                                 <p className="text-gray-300">{rating.comment}</p>
                                             </div>
-                                        ))}
+                                        ))
+                                    ) : (
+                                        <div className="p-4 text-gray-400">No Ratings Yet</div>
+                                    )}
                                     </div>
                                 </div>
                             </div>
