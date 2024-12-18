@@ -354,10 +354,10 @@ export async function GET() {
       
       try {
         // Call the built-in function to get list of eligible courses based on curriculum
-        const scheduledCourses = courseScheduler(coursesData, courseNames);
+        const eligibleCourses = courseScheduler(coursesData, courseNames);
 
         // Return the scheduled courses as JSON
-        return NextResponse.json({ scheduledCourses });
+        return NextResponse.json({ eligibleCourses });
       } catch (error) {
         console.error('Error scheduling courses:', error);
         return NextResponse.json(
